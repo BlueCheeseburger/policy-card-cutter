@@ -5,6 +5,32 @@ optionally narrow it to specific paragraphs, and the AI decides underline/
 highlight/small-text emphasis and proposes taglines — producing a formatted
 card you can copy or export to `.docx`.
 
+## Top 5 features
+
+1. **Full AI card cutting from a real source.** Point it at a saved article
+   or PDF and it reads the cite, the real body paragraphs (boilerplate,
+   nav, and newsletter prompts filtered out), and the images — then decides
+   what to underline, highlight, and shrink, and proposes 1–2 taglines.
+2. **Highlight density, no extra AI call.** One AI response is tiered
+   (essential / standard / full); the Less/Medium/More slider re-renders
+   instantly by filtering locally, instead of re-cutting the card three times.
+3. **Refine in plain language.** A text box sends the cut card back with an
+   instruction ("underline less", "highlight the statistics") instead of a
+   manual underline/highlight/font-size toolbar to fight with.
+4. **Bring your own key, no account, no backend.** Gemini, Anthropic, OpenAI,
+   or Grok — your key lives only in this browser and talks directly to the
+   provider you pick. Nothing is uploaded anywhere else.
+5. **Export straight to `.docx` or plain text**, formatted the way a
+   Verbatim-style card actually looks (underline = read aloud, highlight =
+   most important, small = kept for context).
+
+What sets it apart: it does exactly one job instead of being a card-cutting
+tab bolted onto a full case-prep suite, it has no server or account to trust
+with the article or the key, and its core logic was pulled out of a larger
+app (Warroom) that had already been used and fixed for real debate rounds —
+see "Relationship to Warroom" below. See [`changelog.md`](changelog.md) for
+this fork's changes.
+
 ## Relationship to Warroom
 
 The card-cutting feature — the prompts, the card-cutting skill rules, and the
