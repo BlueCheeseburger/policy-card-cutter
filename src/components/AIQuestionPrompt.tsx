@@ -16,7 +16,7 @@ export default function AIQuestionPrompt({
   const [showOther, setShowOther] = useState(false);
 
   return (
-    <div style={{ border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: 12, background: 'var(--bg-elevated)' }}>
+    <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', padding: 12, background: 'var(--bg-elevated)' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
         <span style={{ fontSize: 16, lineHeight: 1, marginTop: 2 }} aria-hidden>❓</span>
         <p style={{ fontSize: 14, flex: 1, margin: 0 }}>{question.question}</p>

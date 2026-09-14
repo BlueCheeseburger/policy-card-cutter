@@ -11,6 +11,8 @@
     "test": "tsx scripts/test-all.ts"
   },
   "dependencies": {
+    "@fontsource/hanken-grotesk": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
     "docx": "^9.7.1",
     "pdfjs-dist": "^6.3.289",
     "react": "^19.2.8",

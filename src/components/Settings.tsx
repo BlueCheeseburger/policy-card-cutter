@@ -22,7 +22,7 @@ export default function Settings({ onClose }: { onClose: () => void }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', padding: 24 }} onClick={onClose}>
-      <div className="glass-elevated scroll-thin" style={{ width: '100%', maxWidth: 480, maxHeight: '85vh', overflowY: 'auto', padding: 20 }} onClick={(e) => e.stopPropagation()}>
+      <div className="card scroll-thin" style={{ width: '100%', maxWidth: 480, maxHeight: '85vh', overflowY: 'auto', padding: 20 }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <h2 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Settings</h2>
           <button className="btn" onClick={onClose}>✕</button>

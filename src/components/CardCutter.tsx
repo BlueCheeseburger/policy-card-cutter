@@ -248,8 +248,8 @@ export default function CardCutter() {
 
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', padding: '24px 16px' }}>
-      <div className="glass-elevated" style={{ display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
-        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="card" style={{ display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h2 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Cut a card</h2>
             <p style={{ fontSize: 12, color: 'var(--ink-faint)', margin: 0 }}>{stepLabel(step)}</p>
@@ -258,7 +258,7 @@ export default function CardCutter() {
 
         <div className="scroll-thin" style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
           {error && (
-            <div style={{ position: 'sticky', top: 0, zIndex: 10, marginBottom: 12, border: '1px solid rgb(var(--danger-rgb) / 0.3)', borderRadius: 6, background: 'rgb(var(--danger-rgb) / 0.06)', padding: 10, fontSize: 13, color: 'var(--danger)', display: 'flex', gap: 8 }}>
+            <div style={{ position: 'sticky', top: 0, zIndex: 10, marginBottom: 12, border: '1px solid rgb(var(--danger-rgb) / 0.3)', borderRadius: 'var(--radius-sm)', background: 'rgb(var(--danger-rgb) / 0.06)', padding: 10, fontSize: 13, color: 'var(--danger)', display: 'flex', gap: 8 }}>
               <span style={{ flex: 1 }}>{error}</span>
               <button style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }} onClick={() => setError('')}>✕</button>
             </div>
@@ -299,11 +299,11 @@ export default function CardCutter() {
                 Leave everything unselected and the AI cuts from the whole article.
               </div>
               {source.cite && (
-                <div style={{ fontSize: 11, color: 'var(--ink-faint)', border: '1px solid var(--line)', borderRadius: 6, padding: '6px 8px' }}>
+                <div style={{ fontSize: 11, color: 'var(--ink-faint)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', padding: '6px 8px' }}>
                   <span style={{ color: 'var(--ink-muted)', fontWeight: 500 }}>Cite: </span>{source.cite}
                 </div>
               )}
-              <div className="scroll-thin" style={{ borderRadius: 6, border: '1px solid var(--line)', maxHeight: '34vh', overflowY: 'auto' }}>
+              <div className="scroll-thin" style={{ borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', maxHeight: '34vh', overflowY: 'auto' }}>
                 {source.paragraphs.map((para, i) => {
                   const on = includedParas.has(i);
                   return (
@@ -312,7 +312,7 @@ export default function CardCutter() {
                       onClick={() => togglePara(i)}
                       style={{
                         display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', fontSize: 13, lineHeight: 1.5,
-                        border: 'none', borderBottom: '1px solid var(--line)', cursor: 'pointer', background: 'transparent',
+                        border: 'none', borderBottom: '1px solid var(--border-subtle)', cursor: 'pointer', background: 'transparent',
                         ...(on ? { backgroundColor: 'var(--accent-soft)', boxShadow: 'inset 3px 0 0 var(--accent)', color: 'var(--ink)' } : { color: 'var(--ink)', opacity: 0.55 }),
                       }}
                     >
@@ -323,7 +323,7 @@ export default function CardCutter() {
               </div>
 
               {source.images.length > 0 && (
-                <div style={{ border: '1px solid var(--line)', borderRadius: 6 }}>
+                <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)' }}>
                   <button style={{ width: '100%', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-muted)', background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => setShowPics((v) => !v)}>
                     <span>Pictures from the source ({source.images.length}) · {pickedImages.size} selected</span>
                     <span>{showPics ? '▲' : '▼'}</span>
@@ -336,7 +336,7 @@ export default function CardCutter() {
                           <button
                             key={i}
                             onClick={() => setPickedImages((prev) => { const n = new Set(prev); n.has(i) ? n.delete(i) : n.add(i); return n; })}
-                            style={{ position: 'relative', borderRadius: 4, overflow: 'hidden', border: `2px solid ${on ? 'var(--accent)' : 'var(--line)'}`, padding: 0, cursor: 'pointer' }}
+                            style={{ position: 'relative', borderRadius: 4, overflow: 'hidden', border: `2px solid ${on ? 'var(--accent)' : 'var(--border-subtle)'}`, padding: 0, cursor: 'pointer' }}
                             title={img.alt || ''}
                           >
                             <img src={img.src} alt={img.alt || ''} style={{ width: '100%', height: 80, objectFit: 'cover', background: '#fff', display: 'block' }} />
@@ -419,13 +419,13 @@ export default function CardCutter() {
                 <label className="label">Card body <span style={{ textTransform: 'none', fontWeight: 400, color: 'var(--ink-faint)' }}>— verbatim from the source.</span></label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '8px 0', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 12, color: 'var(--ink-muted)' }}>Highlight density:</span>
-                  <div style={{ display: 'inline-flex', borderRadius: 6, border: '1px solid var(--line)', overflow: 'hidden' }}>
+                  <div style={{ display: 'inline-flex', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', overflow: 'hidden' }}>
                     {([1, 2, 3] as HighlightLevel[]).map((lvl) => (
                       <button
                         key={lvl}
                         style={{
                           padding: '5px 10px', fontSize: 12, border: 'none', cursor: 'pointer',
-                          borderLeft: lvl !== 1 ? '1px solid var(--line)' : 'none',
+                          borderLeft: lvl !== 1 ? '1px solid var(--border-subtle)' : 'none',
                           ...(highlightLevel === lvl ? { backgroundColor: 'var(--accent)', color: '#fff' } : { color: 'var(--ink)', opacity: 0.55, background: 'transparent' }),
                         }}
                         onClick={() => applyHighlightLevel(lvl)}
@@ -443,7 +443,7 @@ export default function CardCutter() {
                       style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${color === c ? 'var(--ink)' : 'transparent'}`, backgroundColor: HIGHLIGHT_SWATCH[c], cursor: 'pointer' }} title={`Highlight in ${c}`} />
                   ))}
                 </div>
-                <div className="scroll-thin" style={{ fontSize: 14, color: 'var(--ink)', borderRadius: 6, border: '1px solid var(--line)', padding: 12, maxHeight: '34vh', overflowY: 'auto', userSelect: 'text' }}>
+                <div className="scroll-thin" style={{ fontSize: 14, color: 'var(--ink)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', padding: 12, maxHeight: '34vh', overflowY: 'auto', userSelect: 'text' }}>
                   <FormattedBody runs={runsFromAttrs(editText, editAttrs)} />
                 </div>
               </div>
@@ -475,7 +475,7 @@ export default function CardCutter() {
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {editImages.map((img) => (
                       <div key={img.key} style={{ position: 'relative' }}>
-                        <img src={img.src} alt={img.alt} style={{ maxHeight: 96, borderRadius: 4, border: '1px solid var(--line)', objectFit: 'contain', background: '#fff' }} />
+                        <img src={img.src} alt={img.alt} style={{ maxHeight: 96, borderRadius: 4, border: '1px solid var(--border-subtle)', objectFit: 'contain', background: '#fff' }} />
                         <button
                           style={{ position: 'absolute', top: -6, right: -6, fontSize: 10, background: 'var(--danger)', color: '#fff', width: 16, height: 16, borderRadius: '50%', border: 'none', cursor: 'pointer' }}
                           title="Remove image"
@@ -500,7 +500,7 @@ export default function CardCutter() {
               <div>
                 <h3 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 4px' }}>{savedCard.tag}</h3>
                 <p style={{ fontSize: 12, color: 'var(--ink-faint)', fontStyle: 'italic', margin: '0 0 10px' }}>{savedCard.cite}</p>
-                <div className="scroll-thin" style={{ fontSize: 14, borderRadius: 6, border: '1px solid var(--line)', padding: 12, maxHeight: '40vh', overflowY: 'auto' }}>
+                <div className="scroll-thin" style={{ fontSize: 14, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', padding: 12, maxHeight: '40vh', overflowY: 'auto' }}>
                   <FormattedBody runs={savedCard.bodyRuns} />
                 </div>
               </div>
@@ -513,7 +513,7 @@ export default function CardCutter() {
           )}
         </div>
 
-        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: 8 }}>
           {step === 'select' && (
             <>
               <button className="ai-glow-ring btn-primary" disabled={!selectedBody.trim()} onClick={cut}

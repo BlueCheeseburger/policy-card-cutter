@@ -8,8 +8,12 @@ function App() {
 
   return (
     <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid var(--line)' }}>
-        <h1 style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>Policy Card Cutter</h1>
+      <header style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        height: 44, padding: '0 14px', borderBottom: '1px solid var(--border-subtle)',
+        background: 'var(--bg-elevated)',
+      }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700, margin: 0 }}>Policy Card Cutter</h1>
         <button className="btn" onClick={() => setShowSettings(true)} title="AI provider & API key">⚙ Settings</button>
       </header>
 
