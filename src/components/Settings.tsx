@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { AIProvider } from '../types';
-import type { Settings as SettingsType } from '../providers/ai';
-import { loadSettings, saveSettings } from '../providers/ai';
+import type { Settings as SettingsType } from '../platform/settings';
+import { readSettings, writeSettings } from '../platform/settings';
 
 const PROVIDERS: { id: AIProvider; label: string; corsNote?: string }[] = [
   { id: 'gemini', label: 'Gemini' },
@@ -11,17 +11,13 @@ const PROVIDERS: { id: AIProvider; label: string; corsNote?: string }[] = [
 ];
 
 export default function Settings({ onClose }: { onClose: () => void }) {
-  const [s, setS] = useState<SettingsType>(() => loadSettings());
+  const [s, setS] = useState<SettingsType>(() => readSettings());
 
   function update(patch: Partial<SettingsType>) {
-    const next = { ...s, ...patch };
-    setS(next);
-    saveSettings(next);
+    setS(writeSettings(patch));
   }
   function updateKey(provider: AIProvider, key: string) {
-    const next = { ...s, apiKeys: { ...s.apiKeys, [provider]: key } };
-    setS(next);
-    saveSettings(next);
+    setS(writeSettings({ apiKeys: { ...s.apiKeys, [provider]: key } }));
   }
 
   return (
@@ -33,9 +29,10 @@ export default function Settings({ onClose }: { onClose: () => void }) {
         </div>
 
         <p style={{ fontSize: 12, color: 'var(--ink-muted)', marginBottom: 16, lineHeight: 1.5 }}>
-          Your API key is stored only in this browser's local storage and sent directly to your chosen
-          provider — there is no backend server. Gemini and Anthropic support direct browser calls;
-          OpenAI and Grok generally don't (see notes below).
+          <strong style={{ color: 'var(--ink)' }}>An API key here is not protected.</strong> It sits in
+          browser storage because a page with no accounts has nowhere better to put it, and anything
+          running in this origin can read it. On a shared computer, be careful. Gemini and Anthropic
+          support direct browser calls; OpenAI and Grok generally don't (see notes below).
         </p>
 
         <label className="label" style={{ display: 'block', marginBottom: 6 }}>AI provider</label>

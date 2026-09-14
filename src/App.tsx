@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import CardCutter from './components/CardCutter';
 import SettingsPanel from './components/Settings';
-import { loadSettings } from './providers/ai';
+import { aiConfigured } from './platform/settings';
 
 function App() {
-  const [showSettings, setShowSettings] = useState(() => !loadSettings().apiKeys[loadSettings().provider]);
+  const [showSettings, setShowSettings] = useState(() => !aiConfigured());
 
   return (
     <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>

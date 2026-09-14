@@ -3,9 +3,8 @@ import type { Card, CutterSource, HighlightColor, AIClarification, AIQuestion } 
 import AIQuestionPrompt from './AIQuestionPrompt';
 import { LoadingState } from './Spinner';
 import { FormattedBody } from './CardBody';
-import { humanizeAiError } from '../providers/ai';
-import { cutterReadSource, cutterEmphasize } from '../utils/cutter';
-import { readSingleFile, readFolderSource } from '../utils/readSource';
+import { humanizeAiError, cutterReadSource, cutterEmphasize } from '../platform/ai';
+import { openFile, openFolder } from '../platform/files';
 import { buildAttrsFromSpans, runsFromAttrs, HIGHLIGHT_SWATCH } from '../utils/cardFormat';
 import type { CharAttr, HighlightLevel } from '../utils/cardFormat';
 import { exportCardToDocx, downloadBlob } from '../utils/docxExport';
@@ -48,8 +47,6 @@ export default function CardCutter() {
 
   const [extraImages, setExtraImages] = useState<{ src: string; alt: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const sourceFileRef = useRef<HTMLInputElement>(null);
-  const sourceFolderRef = useRef<HTMLInputElement>(null);
 
   const [pendingQuestion, setPendingQuestion] = useState<AIQuestion | null>(null);
   const [clarifications, setClarifications] = useState<AIClarification[]>([]);
@@ -119,40 +116,25 @@ export default function CardCutter() {
     setAnswering(false);
   }
 
-  async function handlePickedFile(file: File) {
-    setFileName(file.name);
+  // Mirrors Warroom's `pickFile` → `window.warroom.dialog.openFile` →
+  // `window.warroom.ai.cutterReadSource(filePath)` sequence exactly, except
+  // the "path" is an opaque handle from platform/files.ts instead of a real
+  // filesystem path — see platform/ai.ts's header comment for why.
+  async function pickAndRead(kind: 'file' | 'folder') {
+    const handle = kind === 'file'
+      ? await openFile('.html,.htm,.xhtml,.mhtml,.mht,.pdf')
+      : await openFolder();
+    if (!handle) return;
+    setFileName(handle.split('/').pop() || (kind === 'file' ? 'source' : 'saved page'));
     setError('');
     setClarifications([]);
     setPendingQuestion(null);
     setPendingCut(null);
     setStep('reading');
     try {
-      const raw = await readSingleFile(file);
-      const src = await cutterReadSource(raw);
+      const src = await cutterReadSource(handle);
       if (!src?.ok || !src.paragraphs?.length) {
-        setError('No readable article text was found in this file.');
-        setStep('pick');
-        return;
-      }
-      applySource(src);
-    } catch (e: any) {
-      setError(humanizeAiError(e?.message) || e?.message || 'Could not read this file.');
-      setStep('pick');
-    }
-  }
-
-  async function handlePickedFolder(files: FileList) {
-    setFileName(files[0]?.webkitRelativePath?.split('/')[0] || 'saved page');
-    setError('');
-    setClarifications([]);
-    setPendingQuestion(null);
-    setPendingCut(null);
-    setStep('reading');
-    try {
-      const raw = await readFolderSource(files);
-      const src = await cutterReadSource(raw);
-      if (!src?.ok || !src.paragraphs?.length) {
-        setError('No readable article text was found in this folder.');
+        setError(`No readable article text was found in this ${kind}.`);
         setStep('pick');
         return;
       }
@@ -293,13 +275,9 @@ export default function CardCutter() {
                 <p style={{ fontSize: 11, color: 'var(--ink-faint)' }}>The AI reads it, then you guide what goes into the card.</p>
               </div>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <button className="ai-glow-ring btn-primary" onClick={() => sourceFileRef.current?.click()}>Choose a file (.html or .pdf)…</button>
-                <button className="ai-glow-ring btn" onClick={() => sourceFolderRef.current?.click()}>Choose a saved-page folder (with images)…</button>
+                <button className="ai-glow-ring btn-primary" onClick={() => pickAndRead('file')}>Choose a file (.html or .pdf)…</button>
+                <button className="ai-glow-ring btn" onClick={() => pickAndRead('folder')}>Choose a saved-page folder (with images)…</button>
               </div>
-              <input ref={sourceFileRef} type="file" accept=".html,.htm,.xhtml,.mhtml,.mht,.pdf" style={{ display: 'none' }}
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePickedFile(f); e.target.value = ''; }} />
-              <input ref={sourceFolderRef} type="file" {...({ webkitdirectory: 'true' } as any)} multiple style={{ display: 'none' }}
-                onChange={(e) => { if (e.target.files?.length) handlePickedFolder(e.target.files); e.target.value = ''; }} />
             </div>
           )}
 

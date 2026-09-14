@@ -5,6 +5,7 @@
 
 import readSourceTemplate from '../prompts/cutter_read_source.txt?raw';
 import emphasizeTemplate from '../prompts/cutter_emphasize.txt?raw';
+import { renderTemplate } from './renderTemplate';
 
 const TEMPLATES: Record<string, string> = {
   cutter_read_source: readSourceTemplate,
@@ -14,18 +15,7 @@ const TEMPLATES: Record<string, string> = {
 export function renderPrompt(name: keyof typeof TEMPLATES, vars: Record<string, string>): string {
   const template = TEMPLATES[name];
   if (template === undefined) throw new Error(`Unknown prompt template: ${name}`);
-
-  const usedVars = new Set<string>();
-  const rendered = template.replace(/\{\{(\w+)\}\}/g, (_match, key: string) => {
-    if (!(key in vars)) throw new Error(`Prompt "${name}" uses {{${key}}} with no matching value provided.`);
-    usedVars.add(key);
-    return vars[key];
-  });
-
-  for (const key of Object.keys(vars)) {
-    if (!usedVars.has(key)) throw new Error(`Prompt "${name}" was given unused variable {{${key}}}.`);
-  }
-  return rendered;
+  return renderTemplate(template, name, vars);
 }
 
 // Cap a piece of text before it goes into a prompt, and ask before dropping
