@@ -8,9 +8,12 @@
 // pretend to shim either one; see the README's "API keys aren't protected"
 // section for what that means for the user.
 
-import type { AIProvider } from '../types';
+import type { AIProvider, HighlightColor } from '../types';
+import type { HighlightLevel } from '../utils/cardFormat';
 
 const KEY = 'pcc:settings';
+
+export type PromptName = 'cutter_read_source' | 'cutter_emphasize';
 
 export interface Settings {
   provider: AIProvider;
@@ -20,9 +23,20 @@ export interface Settings {
   auxGeminiKey?: string;
   // Current-year short-cite style: "Brady 3-15" (month-day) vs "Brady 26" (year).
   citeYearFormat?: 'month-day' | 'year';
+  // Seeds a new cut's color/density pickers; each cut can still change them.
+  defaultHighlightColor?: HighlightColor;
+  defaultHighlightLevel?: HighlightLevel;
+  // A user edit of a bundled prompt, keyed by template name. Read/rendered in
+  // place of the bundled .txt file when present — see utils/prompt.ts.
+  promptOverrides?: Partial<Record<PromptName, string>>;
 }
 
-const DEFAULT_SETTINGS: Settings = { provider: 'gemini', apiKeys: {} };
+const DEFAULT_SETTINGS: Settings = {
+  provider: 'gemini',
+  apiKeys: {},
+  defaultHighlightColor: 'cyan',
+  defaultHighlightLevel: 2,
+};
 
 export function readSettings(): Settings {
   try {
@@ -44,4 +58,8 @@ export function writeSettings(patch: Partial<Settings>): Settings {
 export function aiConfigured(): boolean {
   const s = readSettings();
   return !!s.apiKeys[s.provider];
+}
+
+export function clearAll(): void {
+  localStorage.removeItem(KEY);
 }

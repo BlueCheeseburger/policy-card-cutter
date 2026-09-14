@@ -5,6 +5,7 @@ import { LoadingState } from './Spinner';
 import { FormattedBody } from './CardBody';
 import { humanizeAiError, cutterReadSource, cutterEmphasize } from '../platform/ai';
 import { openFile, openFolder } from '../platform/files';
+import { readSettings } from '../platform/settings';
 import { buildAttrsFromSpans, runsFromAttrs, HIGHLIGHT_SWATCH } from '../utils/cardFormat';
 import type { CharAttr, HighlightLevel } from '../utils/cardFormat';
 import { exportCardToDocx, downloadBlob } from '../utils/docxExport';
@@ -28,15 +29,15 @@ export default function CardCutter() {
   const [pickedImages, setPickedImages] = useState<Set<number>>(new Set());
   const [showPics, setShowPics] = useState(false);
 
-  // intent + color
+  // intent + color — seeded from Settings' defaults, still changeable per cut.
   const [intent, setIntent] = useState('');
-  const [color, setColor] = useState<HighlightColor>('cyan');
+  const [color, setColor] = useState<HighlightColor>(() => readSettings().defaultHighlightColor ?? 'cyan');
 
   // editor
   const [editText, setEditText] = useState('');
   const [editAttrs, setEditAttrs] = useState<CharAttr[]>([]);
   const [cutResult, setCutResult] = useState<CutResult | null>(null);
-  const [highlightLevel, setHighlightLevel] = useState<HighlightLevel>(2);
+  const [highlightLevel, setHighlightLevel] = useState<HighlightLevel>(() => readSettings().defaultHighlightLevel ?? 2);
   const [taglines, setTaglines] = useState<string[]>([]);
   const [chosenTag, setChosenTag] = useState('');
   const [cite, setCite] = useState('');
@@ -62,10 +63,11 @@ export default function CardCutter() {
       const res = await cutterEmphasize({ body: bodyText, intent: intentText, cite, clarifications: clars });
       if (res.question) { setPendingQuestion(res.question); return; }
       const result = { underline: res.underline, highlight: res.highlight, small: res.small };
+      const defaultLevel = readSettings().defaultHighlightLevel ?? 2;
       setEditText(bodyText);
-      setEditAttrs(buildAttrsFromSpans(bodyText, result, color, 2));
+      setEditAttrs(buildAttrsFromSpans(bodyText, result, color, defaultLevel));
       setCutResult(result);
-      setHighlightLevel(2);
+      setHighlightLevel(defaultLevel);
       setTaglines(res.taglines || []);
       setChosenTag((res.taglines && res.taglines[0]) || '');
       setClarifications([]);
@@ -217,10 +219,12 @@ export default function CardCutter() {
   }
 
   function reset() {
+    const defaults = readSettings();
     setStep('pick'); setError(''); setFileName(''); setSource(null);
     setIncludedParas(new Set()); setPickedImages(new Set()); setShowPics(false);
-    setIntent(''); setEditText(''); setEditAttrs([]); setCutResult(null);
-    setHighlightLevel(2); setTaglines([]); setChosenTag(''); setCite(''); setYear(CURRENT_YEAR);
+    setIntent(''); setColor(defaults.defaultHighlightColor ?? 'cyan');
+    setEditText(''); setEditAttrs([]); setCutResult(null);
+    setHighlightLevel(defaults.defaultHighlightLevel ?? 2); setTaglines([]); setChosenTag(''); setCite(''); setYear(CURRENT_YEAR);
     setRefineText(''); setExtraImages([]); setSavedCard(null); setPendingQuestion(null);
     setClarifications([]); setPendingCut(null);
   }

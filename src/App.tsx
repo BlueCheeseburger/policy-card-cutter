@@ -8,7 +8,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(() => !aiConfigured());
 
   return (
-    <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <header style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         height: 64, padding: '0 24px', borderBottom: '1px solid var(--border-subtle)',
@@ -27,11 +27,9 @@ function App() {
         </button>
       </header>
 
-      <main style={{ flex: 1 }}>
-        <CardCutter />
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflowY: 'auto' }} className="scroll-thin">
+        {showSettings ? <SettingsPanel onClose={() => setShowSettings(false)} /> : <CardCutter />}
       </main>
-
-      {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
     </div>
   );
 }

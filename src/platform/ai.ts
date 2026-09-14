@@ -19,10 +19,11 @@
 
 import cardCuttingSkill from '../skills/card_cutting.md?raw';
 import type { AIProvider, AIClarification, CutterEmphasis, CutterSource, HighlightSpan } from '../types';
-import { readSettings } from './settings';
+import type { PromptName } from './settings';
+import { readSettings, writeSettings } from './settings';
 import { resolveFile, resolveFolder, isFolderHandle } from './files';
 import { readSingleFile, readFolderSource } from '../utils/readSource';
-import { renderPrompt, capForPrompt } from '../utils/prompt';
+import { renderPrompt, capForPrompt, getBundledPromptTemplate, PROMPT_NAMES } from '../utils/prompt';
 
 // ─── The two feature contracts CardCutter.tsx calls ────────────────────────
 
@@ -66,7 +67,7 @@ export async function cutterReadSource(fileHandle: string): Promise<CutterSource
     CITE_YEAR_RULE: citeYearRuleText(),
     PARAGRAPHS: numbered,
     IMAGES: imgList,
-  });
+  }, settings.promptOverrides?.cutter_read_source);
 
   const readRaw = await callAIWithSearch(prompt, 4096);
   const parsed = parseJsonLoose(readRaw);
@@ -129,7 +130,7 @@ export async function cutterEmphasize(params: {
     CLARIFICATIONS_JSON: clar.length ? JSON.stringify(clar) : '(none yet)',
     QUESTIONS_ASKED: refine ? '1' : String(clar.length),
     REFINEMENT_NOTE: refinementNote,
-  });
+  }, readSettings().promptOverrides?.cutter_emphasize);
 
   const emphRaw = await callAI(prompt, 'best', 32768);
   const parsed = parseJsonLoose(emphRaw);
@@ -162,6 +163,37 @@ export async function cutterEmphasize(params: {
   }
   if (taglines.length === 0) taglines = ['Untitled card'];
   return { ok: true, taglines, underline: arr(parsed.underline), highlight, small: arr(parsed.small) };
+}
+
+// ─── Prompt editor (Settings page) ──────────────────────────────────────────
+// Read-and-edit access to the two prompts this feature sends to the model.
+// An edit is stored as a full replacement template in Settings, checked by
+// cutterReadSource/cutterEmphasize above before falling back to the bundled
+// .txt file — same "user override beats bundled default" shape as Warroom's
+// own user-editable prompts (userPromptsDir checked before bundledPromptsDir).
+
+export function promptNames(): PromptName[] {
+  return PROMPT_NAMES as PromptName[];
+}
+
+export function promptSource(name: PromptName): string {
+  return readSettings().promptOverrides?.[name] ?? getBundledPromptTemplate(name);
+}
+
+export function isPromptOverridden(name: PromptName): boolean {
+  return readSettings().promptOverrides?.[name] !== undefined;
+}
+
+export function savePromptOverride(name: PromptName, text: string): void {
+  const current = readSettings();
+  writeSettings({ promptOverrides: { ...current.promptOverrides, [name]: text } });
+}
+
+export function resetPromptOverride(name: PromptName): void {
+  const current = readSettings();
+  const next = { ...current.promptOverrides };
+  delete next[name];
+  writeSettings({ promptOverrides: next });
 }
 
 function citeYearRuleText(): string {

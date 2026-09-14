@@ -12,8 +12,22 @@ const TEMPLATES: Record<string, string> = {
   cutter_emphasize: emphasizeTemplate,
 };
 
-export function renderPrompt(name: keyof typeof TEMPLATES, vars: Record<string, string>): string {
+export const PROMPT_NAMES = Object.keys(TEMPLATES) as (keyof typeof TEMPLATES)[];
+
+// The bundled, as-shipped template text — used by the Settings prompt editor
+// to show what "Reset to default" would restore.
+export function getBundledPromptTemplate(name: keyof typeof TEMPLATES): string {
   const template = TEMPLATES[name];
+  if (template === undefined) throw new Error(`Unknown prompt template: ${name}`);
+  return template;
+}
+
+// `overrideTemplate`, when given, replaces the bundled .txt file entirely —
+// this is how a Settings-page edit of a prompt takes effect. Callers resolve
+// the override themselves (platform/ai.ts, from Settings) so this module
+// stays pure/DOM-only, with no dependency on platform/settings.ts.
+export function renderPrompt(name: keyof typeof TEMPLATES, vars: Record<string, string>, overrideTemplate?: string): string {
+  const template = overrideTemplate ?? TEMPLATES[name];
   if (template === undefined) throw new Error(`Unknown prompt template: ${name}`);
   return renderTemplate(template, name, vars);
 }
