@@ -247,16 +247,12 @@ export default function CardCutter() {
   }, [pickedImages, extraImages, source]);
 
   return (
-    <div style={{ maxWidth: 760, margin: '0 auto', padding: '24px 16px' }}>
-      <div className="card" style={{ display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
-        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <h2 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Cut a card</h2>
-            <p style={{ fontSize: 12, color: 'var(--ink-faint)', margin: 0 }}>{stepLabel(step)}</p>
-          </div>
-        </div>
+    <div style={{ padding: '32px 40px', maxWidth: 820 }}>
+      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, margin: 0 }}>Cut a card</h1>
+      <p style={{ fontSize: 13, color: 'var(--ink-muted)', margin: '6px 0 28px' }}>{stepLabel(step)}</p>
 
-        <div className="scroll-thin" style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <div className="scroll-thin" style={{ flex: 1 }}>
           {error && (
             <div style={{ position: 'sticky', top: 0, zIndex: 10, marginBottom: 12, border: '1px solid rgb(var(--danger-rgb) / 0.3)', borderRadius: 'var(--radius-sm)', background: 'rgb(var(--danger-rgb) / 0.06)', padding: 10, fontSize: 13, color: 'var(--danger)', display: 'flex', gap: 8 }}>
               <span style={{ flex: 1 }}>{error}</span>
@@ -513,7 +509,7 @@ export default function CardCutter() {
           )}
         </div>
 
-        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: 8 }}>
           {step === 'select' && (
             <>
               <button className="ai-glow-ring btn-primary" disabled={!selectedBody.trim()} onClick={cut}
