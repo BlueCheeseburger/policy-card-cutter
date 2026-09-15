@@ -86,12 +86,11 @@ export default function Settings({ onClose }: { onClose: () => void }) {
             <>
               <Row label="API key">
                 <div style={{ flex: 1, display: 'flex', gap: 8 }}>
-                  <input
-                    className="input" style={{ flex: 1, fontFamily: 'var(--font-mono)', fontSize: 12 }}
-                    type={showKey ? 'text' : 'password'} autoComplete="off" spellCheck={false}
+                  <KeyInput
+                    revealed={showKey}
                     placeholder={`Paste your ${PROVIDERS.find((p) => p.id === s.provider)?.label} API key`}
                     value={s.apiKeys[s.provider as 'gemini' | 'anthropic'] ?? ''}
-                    onChange={(e) => updateKey(s.provider as 'gemini' | 'anthropic', e.target.value)}
+                    onChange={(v) => updateKey(s.provider as 'gemini' | 'anthropic', v)}
                   />
                   <button className="btn" onClick={() => setShowKey((v) => !v)}>{showKey ? 'Hide' : 'Show'}</button>
                 </div>
@@ -115,11 +114,11 @@ export default function Settings({ onClose }: { onClose: () => void }) {
 
           {s.provider !== 'gemini' && (
             <Row label="Gemini key" hint="Optional — only used for Google Search author-credential lookups">
-              <input
-                type="password" className="input" style={{ flex: 1, fontFamily: 'var(--font-mono)', fontSize: 12 }}
+              <KeyInput
+                revealed={false}
                 placeholder="Only used to look up author credentials via Google Search"
                 value={s.auxGeminiKey ?? ''}
-                onChange={(e) => update({ auxGeminiKey: e.target.value })}
+                onChange={(v) => update({ auxGeminiKey: v })}
               />
             </Row>
           )}
@@ -297,6 +296,44 @@ function Segmented({ value, onChange, options }: {
         );
       })}
     </div>
+  );
+}
+
+// A masked text field for API keys that never triggers Chrome's (or any
+// browser's) "Save password?" prompt. Real `type="password"` inputs get that
+// prompt unconditionally — `autocomplete="off"` is deliberately ignored on
+// them by every major browser, specifically so a page can't opt itself out
+// of the password manager. The fix is to never use a real password field:
+// this renders `type="text"` and masks the characters with the CSS property
+// `-webkit-text-security` instead, which looks identical but isn't a field
+// browsers' credential heuristics recognize at all. Firefox doesn't support
+// that CSS property and shows the key in plain text; every Chromium browser
+// (Chrome, Edge, Arc, Brave, Opera) and Safari do.
+function KeyInput({ value, onChange, placeholder, revealed }: {
+  value: string; onChange: (v: string) => void; placeholder?: string; revealed: boolean;
+}) {
+  return (
+    <input
+      className="input"
+      style={{
+        flex: 1, fontFamily: 'var(--font-mono)', fontSize: 12,
+        WebkitTextSecurity: revealed ? 'none' : 'disc',
+      } as React.CSSProperties}
+      type="text"
+      inputMode="text"
+      autoComplete="off"
+      autoCorrect="off"
+      autoCapitalize="off"
+      spellCheck={false}
+      // Extra opt-outs some password managers respect even though Chrome
+      // itself ignores autocomplete="off" — harmless to include regardless.
+      data-lpignore="true"
+      data-1p-ignore=""
+      data-bwignore="true"
+      placeholder={placeholder}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
   );
 }
 
