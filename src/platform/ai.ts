@@ -18,12 +18,25 @@
 // CORS note below and the README for what that costs.
 
 import cardCuttingSkill from '../skills/card_cutting.md?raw';
-import type { AIProvider, AIClarification, CutterEmphasis, CutterSource, HighlightSpan } from '../types';
+import type { AIClarification, CutterEmphasis, CutterSource, HighlightSpan } from '../types';
 import type { PromptName } from './settings';
 import { readSettings, writeSettings } from './settings';
 import { resolveFile, resolveFolder, isFolderHandle } from './files';
 import { readSingleFile, readFolderSource } from '../utils/readSource';
 import { renderPrompt, capForPrompt, getBundledPromptTemplate, PROMPT_NAMES } from '../utils/prompt';
+
+// The bundled, as-shipped text for everything the Settings → Prompts editor
+// lists — the two AI prompts plus the card-cutting skill markdown, which is
+// injected into both prompts as {{CARD_CUTTING_SKILL}}. Edits are stored as a
+// full-text override in Settings and checked here before falling back to
+// this bundled copy.
+function bundledPromptText(name: PromptName): string {
+  return name === 'card_cutting_skill' ? cardCuttingSkill : getBundledPromptTemplate(name);
+}
+
+function currentSkillText(): string {
+  return readSettings().promptOverrides?.card_cutting_skill ?? cardCuttingSkill;
+}
 
 // ─── The two feature contracts CardCutter.tsx calls ────────────────────────
 
@@ -60,7 +73,7 @@ export async function cutterReadSource(fileHandle: string): Promise<CutterSource
   const prompt = renderPrompt('cutter_read_source', {
     IMAGES_NOTE: raw.images.length ? ', plus a list of its images' : '',
     TODAY_STR: todayStr,
-    CARD_CUTTING_SKILL: cardCuttingSkill,
+    CARD_CUTTING_SKILL: currentSkillText(),
     CURRENT_YEAR: String(today.getFullYear()),
     META_URL_OR_NOTE: raw.metaUrl || '(none — omit the URL)',
     CREDENTIALS_INSTRUCTION: credentialsInstruction,
@@ -102,7 +115,7 @@ export async function cutterEmphasize(params: {
   cite?: string;
   clarifications?: AIClarification[];
   refineInstruction?: string;
-  previous?: { underline?: string[]; highlight?: HighlightSpan[]; small?: string[] };
+  previous?: { underline?: string[]; highlight?: HighlightSpan[]; box?: string[]; small?: string[] };
 }): Promise<CutterEmphasis> {
   const text = String(params.body ?? '').trim();
   if (!text) throw new Error('No card body text to cut.');
@@ -116,6 +129,7 @@ export async function cutterEmphasize(params: {
         highlightTier1: (params.previous?.highlight ?? []).filter((h) => h.tier === 1).map((h) => h.text),
         highlightTier2: (params.previous?.highlight ?? []).filter((h) => h.tier === 2).map((h) => h.text),
         highlightTier3: (params.previous?.highlight ?? []).filter((h) => h.tier === 3).map((h) => h.text),
+        box: params.previous?.box ?? [],
         small: params.previous?.small ?? [],
       })}\n` +
       `The debater wants this changed: "${refine}"\n` +
@@ -123,7 +137,7 @@ export async function cutterEmphasize(params: {
     : '';
 
   const prompt = renderPrompt('cutter_emphasize', {
-    CARD_CUTTING_SKILL: cardCuttingSkill,
+    CARD_CUTTING_SKILL: currentSkillText(),
     CITE_NOTE: params.cite ? ` (cite: ${params.cite})` : '',
     INTENT_NOTE: params.intent ? `"${params.intent}"` : '(not specified — infer the strongest argument)',
     BODY_TEXT: capForPrompt(text, 40000, 'the card body'),
@@ -132,11 +146,11 @@ export async function cutterEmphasize(params: {
     REFINEMENT_NOTE: refinementNote,
   }, readSettings().promptOverrides?.cutter_emphasize);
 
-  const emphRaw = await callAI(prompt, 'best', 32768);
+  const emphRaw = await callAI(prompt, 32768);
   const parsed = parseJsonLoose(emphRaw);
   if (!parsed) throw new Error(`Warroom AI could not cut this card — its reply wasn't valid JSON. First 300 characters: ${JSON.stringify(emphRaw.slice(0, 300))}`);
   if (parsed?.question?.question && Array.isArray(parsed.question.options)) {
-    return { ok: true, question: parsed.question, taglines: [], underline: [], highlight: [], small: [] };
+    return { ok: true, question: parsed.question, taglines: [], underline: [], highlight: [], box: [], small: [] };
   }
 
   const arr = (v: any): string[] => Array.isArray(v) ? v.filter((s: any) => typeof s === 'string' && s.trim()).map((s: string) => s.trim()) : [];
@@ -162,22 +176,23 @@ export async function cutterEmphasize(params: {
     throw new Error('Warroom AI returned no highlighting for this card. Try cutting it again.');
   }
   if (taglines.length === 0) taglines = ['Untitled card'];
-  return { ok: true, taglines, underline: arr(parsed.underline), highlight, small: arr(parsed.small) };
+  return { ok: true, taglines, underline: arr(parsed.underline), highlight, box: arr(parsed.box), small: arr(parsed.small) };
 }
 
 // ─── Prompt editor (Settings page) ──────────────────────────────────────────
-// Read-and-edit access to the two prompts this feature sends to the model.
-// An edit is stored as a full replacement template in Settings, checked by
-// cutterReadSource/cutterEmphasize above before falling back to the bundled
-// .txt file — same "user override beats bundled default" shape as Warroom's
-// own user-editable prompts (userPromptsDir checked before bundledPromptsDir).
+// Read-and-edit access to everything sent to the model: the two AI prompts,
+// plus the card-cutting skill markdown they both embed. An edit is stored as
+// a full replacement in Settings, checked above before falling back to the
+// bundled file — same "user override beats bundled default" shape as
+// Warroom's own user-editable prompts (userPromptsDir checked before
+// bundledPromptsDir).
 
 export function promptNames(): PromptName[] {
-  return PROMPT_NAMES as PromptName[];
+  return [...PROMPT_NAMES, 'card_cutting_skill'] as PromptName[];
 }
 
 export function promptSource(name: PromptName): string {
-  return readSettings().promptOverrides?.[name] ?? getBundledPromptTemplate(name);
+  return readSettings().promptOverrides?.[name] ?? bundledPromptText(name);
 }
 
 export function isPromptOverridden(name: PromptName): boolean {
@@ -206,21 +221,20 @@ function citeYearRuleText(): string {
 
 // ─── Provider-calling engine (no Warroom equivalent — see file header) ─────
 //
-// CORS caveat, flagged again in Settings: Gemini and Anthropic both serve
-// CORS headers that let a browser call them directly — Anthropic needs the
-// `anthropic-dangerous-direct-browser-access` header, set below. OpenAI and
-// xAI's chat-completions endpoints do NOT send CORS headers for arbitrary
-// origins, so calls to those two will fail in-browser with a network error,
-// not a code bug — there is no backend here to proxy around it.
-
-type ModelTier = 'balanced' | 'best';
-
-const MODEL_TIER_IDS: Record<AIProvider, Record<ModelTier, string>> = {
-  gemini:    { balanced: 'gemini-2.5-flash', best: 'gemini-3.7-flash' },
-  openai:    { balanced: 'gpt-5.6-terra',    best: 'gpt-5.6-sol' },
-  anthropic: { balanced: 'claude-sonnet-5',  best: 'claude-opus-5' },
-  grok:      { balanced: 'grok-4.3',         best: 'grok-4.6' },
-};
+// Only three providers are offered, all of which a browser tab can actually
+// reach with no backend:
+//   • Gemini — sends CORS headers on generativelanguage.googleapis.com.
+//   • Anthropic — needs the `anthropic-dangerous-direct-browser-access`
+//     header (set below), without which it refuses the request outright.
+//   • LM Studio — the user's own machine. The page is HTTPS and LM Studio is
+//     http://localhost, which Chrome/Edge/Firefox treat as trustworthy;
+//     Safari blocks it. LM Studio's own CORS setting also has to be on.
+// OpenAI and xAI were dropped entirely: their chat-completions APIs never
+// send CORS headers for a browser origin, so a call to either always failed
+// with a network error here — there was no working path to keep.
+//
+// There is no tier/model-picker abstraction: the user types the exact model
+// name their provider expects (Settings → AI), and every call uses it as-is.
 
 function truncatedResponseError(provider: string, partial: string): Error {
   const chars = (partial ?? '').length;
@@ -273,38 +287,6 @@ async function callGemini(apiKey: string, prompt: string, modelId: string, maxOu
   return text;
 }
 
-function openaiHttpError(status: number, body: string): Error {
-  let parsed: any;
-  try { parsed = JSON.parse(body)?.error; } catch {}
-  if (parsed?.message) {
-    const type = parsed.type || parsed.code;
-    return new Error(`OpenAI [${status}${type ? ' ' + type : ''}]: ${parsed.message}`);
-  }
-  if (status === 429) return new Error('OpenAI rate limit reached — wait a moment and try again.');
-  if (status === 503) return new Error('OpenAI is busy right now — try again in a moment.');
-  if (status === 401 || status === 403) return new Error('OpenAI rejected the API key — check your key in Settings.');
-  return new Error(`OpenAI request failed (HTTP ${status}) — try again shortly. If this is a network error, it is likely CORS: OpenAI's API does not allow direct browser calls.`);
-}
-
-async function callOpenAI(apiKey: string, prompt: string, modelId: string, maxOutputTokens: number): Promise<string> {
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: modelId,
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.1,
-      max_tokens: maxOutputTokens,
-    }),
-  });
-  if (!res.ok) throw openaiHttpError(res.status, await res.text().catch(() => ''));
-  const data = await res.json() as any;
-  const text = data?.choices?.[0]?.message?.content;
-  if (typeof text !== 'string') throw new Error('Unexpected OpenAI response shape');
-  if (data?.choices?.[0]?.finish_reason === 'length') throw truncatedResponseError('OpenAI', text);
-  return text;
-}
-
 function anthropicHttpError(status: number, body: string): Error {
   let parsed: any;
   try { parsed = JSON.parse(body)?.error; } catch {}
@@ -338,59 +320,59 @@ async function callAnthropic(apiKey: string, prompt: string, modelId: string, ma
   return text;
 }
 
-function grokHttpError(status: number, body: string): Error {
-  let parsed: any;
-  try { parsed = JSON.parse(body)?.error; } catch {}
-  if (parsed?.message) {
-    const type = parsed.type || parsed.code;
-    return new Error(`Grok [${status}${type ? ' ' + type : ''}]: ${parsed.message}`);
-  }
-  if (status === 429) return new Error('Grok rate limit reached — wait a moment and try again.');
-  if (status === 401 || status === 403) return new Error('xAI rejected the API key — check your Grok key in Settings.');
-  return new Error(`Grok request failed (HTTP ${status}) — try again shortly. If this is a network error, it is likely CORS: xAI's API does not allow direct browser calls.`);
-}
-
-async function callGrok(apiKey: string, prompt: string, modelId: string, maxOutputTokens: number): Promise<string> {
-  const res = await fetch('https://api.x.ai/v1/chat/completions', {
+async function callLmStudio(baseUrl: string, modelName: string, prompt: string, maxOutputTokens: number): Promise<string> {
+  const base = baseUrl.trim().replace(/\/+$/, '');
+  const res = await fetch(`${base}/v1/chat/completions`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: modelId,
+      model: modelName || 'local-model',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.1,
       max_tokens: maxOutputTokens,
     }),
+  }).catch((e) => {
+    throw new Error(
+      `Could not reach LM Studio at ${base} (${e?.message || 'network error'}). ` +
+      `Make sure the local server is running and its CORS setting is on. Safari blocks this entirely — use Chrome, Edge, or Firefox.`,
+    );
   });
-  if (!res.ok) throw grokHttpError(res.status, await res.text().catch(() => ''));
+  if (!res.ok) throw new Error(`LM Studio [${res.status}]: ${(await res.text().catch(() => '')).slice(0, 300) || 'request failed'}`);
   const data = await res.json() as any;
-  const text = data?.choices?.[0]?.message?.content;
-  if (typeof text !== 'string') throw new Error('Unexpected Grok response shape');
-  if (data?.choices?.[0]?.finish_reason === 'length') throw truncatedResponseError('Grok', text);
+  const choice = data?.choices?.[0];
+  const text = choice?.message?.content;
+  if (typeof text !== 'string') throw new Error('Unexpected LM Studio response shape');
+  if (choice?.finish_reason === 'length') throw truncatedResponseError('LM Studio', text);
+  if (!text) throw new Error('LM Studio returned an empty response.');
   return text;
 }
 
-async function callAI(prompt: string, tier: ModelTier, maxOutputTokens = 8192): Promise<string> {
-  const settings = readSettings();
-  const { provider } = settings;
-  const apiKey = settings.apiKeys[provider];
-  if (!apiKey) throw new Error(`NO_KEY: add your ${provider} API key in Settings.`);
-  const modelId = MODEL_TIER_IDS[provider][tier];
-  if (provider === 'gemini') return callGemini(apiKey, prompt, modelId, maxOutputTokens);
-  if (provider === 'openai') return callOpenAI(apiKey, prompt, modelId, maxOutputTokens);
-  if (provider === 'anthropic') return callAnthropic(apiKey, prompt, modelId, maxOutputTokens);
-  return callGrok(apiKey, prompt, modelId, maxOutputTokens);
+async function callAI(prompt: string, maxOutputTokens = 8192): Promise<string> {
+  const s = readSettings();
+  if (s.provider === 'lmstudio') {
+    if (!s.lmStudioUrl.trim()) throw new Error('NO_KEY: add your LM Studio server address in Settings.');
+    return callLmStudio(s.lmStudioUrl, s.lmStudioModel, prompt, maxOutputTokens);
+  }
+  const apiKey = s.apiKeys[s.provider];
+  if (!apiKey) throw new Error(`NO_KEY: add your ${s.provider} API key in Settings.`);
+  if (s.provider === 'gemini') return callGemini(apiKey, prompt, s.geminiModel || 'gemini-2.5-flash', maxOutputTokens);
+  return callAnthropic(apiKey, prompt, s.anthropicModel, maxOutputTokens);
 }
 
+// Gemini-specific call with Google Search grounding — used to look up author
+// credentials when they aren't present in the article text. Falls back to
+// the optional aux Gemini key (Settings) when the main provider isn't
+// Gemini, and to a plain non-grounded call if no Gemini key exists anywhere.
 async function callAIWithSearch(prompt: string, maxOutputTokens = 4096): Promise<string> {
-  const settings = readSettings();
-  if (settings.provider === 'gemini') {
-    const apiKey = settings.apiKeys.gemini;
+  const s = readSettings();
+  if (s.provider === 'gemini') {
+    const apiKey = s.apiKeys.gemini;
     if (!apiKey) throw new Error('NO_KEY: add your Gemini API key in Settings.');
-    return callGemini(apiKey, prompt, MODEL_TIER_IDS.gemini.balanced, maxOutputTokens, true);
+    return callGemini(apiKey, prompt, s.geminiModel || 'gemini-2.5-flash', maxOutputTokens, true);
   }
-  const auxKey = settings.auxGeminiKey;
-  if (auxKey) return callGemini(auxKey, prompt, MODEL_TIER_IDS.gemini.balanced, maxOutputTokens, true);
-  return callAI(prompt, 'balanced', maxOutputTokens);
+  const auxKey = s.auxGeminiKey;
+  if (auxKey) return callGemini(auxKey, prompt, 'gemini-2.5-flash', maxOutputTokens, true);
+  return callAI(prompt, maxOutputTokens);
 }
 
 function parseJsonLoose(raw: string): any {
@@ -406,8 +388,15 @@ function parseJsonLoose(raw: string): any {
 // Friendlier, paraphrased error for inline UI use (mirrors Warroom's humanizeGeminiError).
 export function humanizeAiError(raw: string | undefined | null): string {
   const msg = (raw ?? '').toLowerCase();
-  const settings = readSettings();
-  const name = settings.provider === 'gemini' ? 'Gemini' : settings.provider === 'openai' ? 'OpenAI' : settings.provider === 'anthropic' ? 'Claude' : 'Grok';
+  const s = readSettings();
+  const name = s.provider === 'gemini' ? 'Gemini' : s.provider === 'anthropic' ? 'Claude' : 'LM Studio';
+
+  if (s.provider === 'lmstudio') {
+    if (msg.startsWith('no_key')) return 'Add your LM Studio server address in Settings.';
+    if (msg.includes('could not reach lm studio')) return raw as string;
+    if (raw && raw.length > 0 && raw.length < 200) return raw;
+    return 'LM Studio ran into a problem. Check that the local server is running.';
+  }
 
   if (msg.startsWith('no_key')) return `Add your ${name} API key in Settings to use AI features.`;
   if (msg.includes('resource_exhausted') || msg.includes('quota') || msg.includes('429') || msg.includes('rate limit'))
@@ -415,7 +404,7 @@ export function humanizeAiError(raw: string | undefined | null): string {
   if (msg.includes('api_key_invalid') || msg.includes('invalid api key') || msg.includes('api key not valid') || msg.includes('rejected the api key') || msg.includes('rejected the request'))
     return `Your ${name} API key isn't working. Double-check it in Settings.`;
   if (msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('cors'))
-    return `Couldn't reach ${name} from the browser — this may be a CORS restriction. Gemini and Anthropic are the two providers this app can call directly; OpenAI and Grok generally can't be called from a browser without a backend.`;
+    return `Couldn't reach ${name} from the browser — this may be a CORS restriction.`;
   if (msg.includes('permission_denied') || msg.includes('403') || msg.includes('unauthorized') || msg.includes('401'))
     return `${name} rejected the request — your API key may not have access to this model.`;
   if (msg.includes('safety') || msg.includes('blocked') || msg.includes('harm'))

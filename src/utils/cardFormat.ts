@@ -29,11 +29,12 @@ export const FONT_SIZE_EM: Record<number, string> = {
 export interface CharAttr {
   u: boolean;                // underline (read aloud)
   hl: HighlightColor | null; // highlight color (most important read words)
+  box: boolean;              // bordered box around the single most essential word/phrase
   fs: FontSize;              // 11 = normal; 8/6/3 = shrunk context (not read)
 }
 
 export function emptyAttrs(len: number): CharAttr[] {
-  return Array.from({ length: len }, () => ({ u: false, hl: null, fs: 11 as FontSize }));
+  return Array.from({ length: len }, () => ({ u: false, hl: null, box: false, fs: 11 as FontSize }));
 }
 
 // A match starting mid-word (e.g. "in" landing inside "administrative") is never
@@ -78,7 +79,7 @@ export type HighlightLevel = 1 | 2 | 3;
 // Apply AI-returned emphasis substrings onto the verbatim body, producing runs.
 export function buildAttrsFromSpans(
   text: string,
-  spans: { underline?: string[]; highlight?: { text: string; tier: HighlightLevel }[]; small?: string[] },
+  spans: { underline?: string[]; highlight?: { text: string; tier: HighlightLevel }[]; box?: string[]; small?: string[] },
   color: HighlightColor,
   highlightLevel: HighlightLevel = 3,
 ): CharAttr[] {
@@ -95,6 +96,9 @@ export function buildAttrsFromSpans(
   mark(spans.underline, (a) => { a.u = true; a.fs = 11; });
   const highlightAtLevel = (spans.highlight ?? []).filter((h) => h.tier <= highlightLevel).map((h) => h.text);
   mark(highlightAtLevel, (a) => { a.hl = color; a.u = true; a.fs = 11; });
+  // Box is unconditional, like underline — it marks the single most essential
+  // word/phrase within the highlight, not a fourth density level to filter.
+  mark(spans.box, (a) => { a.box = true; a.u = true; a.fs = 11; });
   return attrs;
 }
 
@@ -102,19 +106,20 @@ export function runsFromAttrs(text: string, attrs: CharAttr[]): CardRun[] {
   const runs: CardRun[] = [];
   let cur: (CardRun & { _key: string }) | null = null;
   for (let i = 0; i < text.length; i++) {
-    const a = attrs[i] ?? { u: false, hl: null, fs: 11 as FontSize };
-    const key = `${a.u}|${a.hl ?? ''}|${a.fs}`;
+    const a = attrs[i] ?? { u: false, hl: null, box: false, fs: 11 as FontSize };
+    const key = `${a.u}|${a.hl ?? ''}|${a.box}|${a.fs}`;
     if (cur && cur._key === key) {
       cur.text += text[i];
     } else {
-      cur = { _key: key, text: text[i], underline: a.u || undefined, highlight: a.hl ?? undefined, fontSize: a.fs !== 11 ? a.fs : undefined };
+      cur = { _key: key, text: text[i], underline: a.u || undefined, highlight: a.hl ?? undefined, box: a.box || undefined, fontSize: a.fs !== 11 ? a.fs : undefined };
       runs.push(cur);
     }
   }
-  return runs.map(({ text: t, underline, highlight, fontSize }) => {
+  return runs.map(({ text: t, underline, highlight, box, fontSize }) => {
     const run: CardRun = { text: t };
     if (underline) run.underline = true;
     if (highlight) run.highlight = highlight;
+    if (box) run.box = true;
     if (fontSize) run.fontSize = fontSize;
     return run;
   });

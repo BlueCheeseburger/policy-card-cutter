@@ -12,11 +12,10 @@ import {
 // Settings.tsx: a scrollable column of bordered "card" sections, each with a
 // label header, ending in a danger section. Adapted to this app's plain-CSS
 // styling instead of policy-flow's Tailwind classes.
-const PROVIDERS: { id: AIProvider; label: string; corsNote?: string }[] = [
+const PROVIDERS: { id: AIProvider; label: string }[] = [
   { id: 'gemini', label: 'Gemini' },
   { id: 'anthropic', label: 'Claude (Anthropic)' },
-  { id: 'openai', label: 'OpenAI', corsNote: "OpenAI's API blocks direct browser calls (no CORS) — this will likely fail without a backend proxy." },
-  { id: 'grok', label: 'Grok (xAI)', corsNote: "xAI's API blocks direct browser calls (no CORS) — this will likely fail without a backend proxy." },
+  { id: 'lmstudio', label: 'LM Studio' },
 ];
 
 const COLORS: HighlightColor[] = ['yellow', 'cyan', 'green'];
@@ -31,7 +30,7 @@ export default function Settings({ onClose }: { onClose: () => void }) {
   function update(patch: Partial<SettingsType>) {
     setS(writeSettings(patch));
   }
-  function updateKey(provider: AIProvider, key: string) {
+  function updateKey(provider: 'gemini' | 'anthropic', key: string) {
     setS(writeSettings({ apiKeys: { ...s.apiKeys, [provider]: key } }));
   }
 
@@ -45,37 +44,74 @@ export default function Settings({ onClose }: { onClose: () => void }) {
 
         <Section
           title="AI"
-          intro={s.apiKeys[s.provider] ? `${PROVIDERS.find((p) => p.id === s.provider)?.label} · key set` : 'No key set — nothing here works yet'}
+          intro={
+            s.provider === 'lmstudio'
+              ? (s.lmStudioUrl.trim() ? `LM Studio · ${s.lmStudioUrl}` : 'No server address set — nothing here works yet')
+              : (s.apiKeys[s.provider] ? `${PROVIDERS.find((p) => p.id === s.provider)?.label} · key set` : 'No key set — nothing here works yet')
+          }
         >
           <Row label="Provider">
             <Segmented value={s.provider} onChange={(v) => update({ provider: v as AIProvider })}
               options={PROVIDERS.map((p) => ({ value: p.id, label: p.label }))} />
           </Row>
 
-          {PROVIDERS.map((p) => s.provider === p.id && (
-            <React.Fragment key={p.id}>
+          {s.provider === 'lmstudio' ? (
+            <>
+              <Row label="Server address">
+                <input
+                  className="input" style={{ flex: 1, fontFamily: 'var(--font-mono)', fontSize: 12 }}
+                  spellCheck={false}
+                  placeholder="http://localhost:1234"
+                  value={s.lmStudioUrl}
+                  onChange={(e) => update({ lmStudioUrl: e.target.value })}
+                />
+              </Row>
+              <Row label="Model" hint="Whatever model is currently loaded in LM Studio.">
+                <input
+                  className="input" style={{ flex: 1, fontFamily: 'var(--font-mono)', fontSize: 12 }}
+                  spellCheck={false}
+                  placeholder="local-model"
+                  value={s.lmStudioModel}
+                  onChange={(e) => update({ lmStudioModel: e.target.value })}
+                />
+              </Row>
+              <Callout>
+                LM Studio runs on your own machine, so nothing leaves it. Two catches: turn on{' '}
+                <strong style={{ color: 'var(--ink)' }}>CORS</strong> in LM Studio's server settings, and use
+                Chrome, Edge, or Firefox — Safari blocks a page like this one from reaching{' '}
+                <code style={{ fontFamily: 'var(--font-mono)' }}>localhost</code> at all.
+              </Callout>
+            </>
+          ) : (
+            <>
               <Row label="API key">
                 <div style={{ flex: 1, display: 'flex', gap: 8 }}>
                   <input
                     className="input" style={{ flex: 1, fontFamily: 'var(--font-mono)', fontSize: 12 }}
                     type={showKey ? 'text' : 'password'} autoComplete="off" spellCheck={false}
-                    placeholder={`Paste your ${p.label} API key`}
-                    value={s.apiKeys[p.id] ?? ''}
-                    onChange={(e) => updateKey(p.id, e.target.value)}
+                    placeholder={`Paste your ${PROVIDERS.find((p) => p.id === s.provider)?.label} API key`}
+                    value={s.apiKeys[s.provider as 'gemini' | 'anthropic'] ?? ''}
+                    onChange={(e) => updateKey(s.provider as 'gemini' | 'anthropic', e.target.value)}
                   />
                   <button className="btn" onClick={() => setShowKey((v) => !v)}>{showKey ? 'Hide' : 'Show'}</button>
                 </div>
               </Row>
-              {p.corsNote && <p style={{ fontSize: 12, color: 'var(--danger)', margin: '-6px 0 0 152px' }}>{p.corsNote}</p>}
-            </React.Fragment>
-          ))}
-
-          <Callout>
-            <strong style={{ color: 'var(--ink)' }}>An API key here is not protected.</strong> It sits in
-            browser storage because a page with no accounts has nowhere better to put it, and
-            anything running in this origin can read it. On a shared computer, be careful. Gemini
-            and Anthropic support direct browser calls; OpenAI and Grok generally don't.
-          </Callout>
+              <Row label="Model">
+                <input
+                  className="input" style={{ flex: 1, fontFamily: 'var(--font-mono)', fontSize: 12 }}
+                  spellCheck={false}
+                  placeholder={s.provider === 'gemini' ? 'gemini-2.5-flash' : 'claude-sonnet-5'}
+                  value={s.provider === 'gemini' ? s.geminiModel : s.anthropicModel}
+                  onChange={(e) => update(s.provider === 'gemini' ? { geminiModel: e.target.value } : { anthropicModel: e.target.value })}
+                />
+              </Row>
+              <Callout>
+                <strong style={{ color: 'var(--ink)' }}>An API key here is not protected.</strong> It sits in
+                browser storage because a page with no accounts has nowhere better to put it, and
+                anything running in this origin can read it. On a shared computer, be careful.
+              </Callout>
+            </>
+          )}
 
           {s.provider !== 'gemini' && (
             <Row label="Gemini key" hint="Optional — only used for Google Search author-credential lookups">

@@ -16,7 +16,7 @@ type Step = 'pick' | 'reading' | 'select' | 'cutting' | 'edit' | 'done';
 
 const COLORS: HighlightColor[] = ['yellow', 'cyan', 'green'];
 
-type CutResult = { underline: string[]; highlight: { text: string; tier: HighlightLevel }[]; small: string[] };
+type CutResult = { underline: string[]; highlight: { text: string; tier: HighlightLevel }[]; box: string[]; small: string[] };
 
 export default function CardCutter() {
   const [step, setStep] = useState<Step>('pick');
@@ -62,7 +62,7 @@ export default function CardCutter() {
     try {
       const res = await cutterEmphasize({ body: bodyText, intent: intentText, cite, clarifications: clars });
       if (res.question) { setPendingQuestion(res.question); return; }
-      const result = { underline: res.underline, highlight: res.highlight, small: res.small };
+      const result = { underline: res.underline, highlight: res.highlight, box: res.box, small: res.small };
       const defaultLevel = readSettings().defaultHighlightLevel ?? 2;
       setEditText(bodyText);
       setEditAttrs(buildAttrsFromSpans(bodyText, result, color, defaultLevel));
@@ -94,7 +94,7 @@ export default function CardCutter() {
         setError(`Warroom AI needs more detail to make that change: ${res.question.question}`);
         return;
       }
-      const result = { underline: res.underline, highlight: res.highlight, small: res.small };
+      const result = { underline: res.underline, highlight: res.highlight, box: res.box, small: res.small };
       setEditAttrs(buildAttrsFromSpans(editText, result, color, highlightLevel));
       setCutResult(result);
       if (res.taglines?.length) {

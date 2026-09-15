@@ -2,7 +2,7 @@
 // (bold heading tag, underline = read-aloud, highlight color, small text for
 // shrunk context) — the same run shape Warroom's own docx export understands.
 
-import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, BorderStyle } from 'docx';
 import type { Card, HighlightColor } from '../types';
 
 const HIGHLIGHT_TO_DOCX: Record<HighlightColor, 'yellow' | 'cyan' | 'green'> = {
@@ -11,11 +11,16 @@ const HIGHLIGHT_TO_DOCX: Record<HighlightColor, 'yellow' | 'cyan' | 'green'> = {
   green: 'green',
 };
 
+// Matches the real Verbatim "Emphasis" character style found in an actual cut
+// card's XML: `<w:bdr w:val="single" w:sz="8" w:space="0" w:color="auto"/>`.
+const BOX_BORDER = { style: BorderStyle.SINGLE, size: 8, space: 0, color: 'auto' };
+
 export async function exportCardToDocx(card: Card): Promise<Blob> {
   const bodyRuns = card.bodyRuns.map((r) => new TextRun({
     text: r.text,
     underline: r.underline ? {} : undefined,
     highlight: r.highlight ? HIGHLIGHT_TO_DOCX[r.highlight] : undefined,
+    border: r.box ? BOX_BORDER : undefined,
     size: (r.fontSize ?? 11) * 2, // half-points; 11pt body default
   }));
 

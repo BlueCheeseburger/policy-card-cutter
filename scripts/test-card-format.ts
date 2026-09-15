@@ -95,5 +95,37 @@ console.log('\n[5] small text and underline/highlight can coexist without one er
   check('a highlighted run exists', !!highlightedRun);
 }
 
+console.log('\n[6] box is unconditional (like underline), independent of the highlight-density level');
+{
+  const text = 'The US government open pursuit of nuclear invulnerability through missile defense.';
+  const spans = {
+    underline: [text],
+    highlight: [{ text: 'pursuit of nuclear invulnerability', tier: 3 as const }],
+    box: ['nuclear invulnerability'],
+  };
+  for (const level of [1, 2, 3] as const) {
+    const attrs = buildAttrsFromSpans(text, spans, 'cyan', level);
+    const runs = runsFromAttrs(text, attrs);
+    const boxed = runs.filter((r) => r.box).map((r) => r.text).join('');
+    check(`level ${level}: box still renders even though its highlight is tier 3`, boxed === 'nuclear invulnerability', boxed);
+  }
+}
+
+console.log('\n[7] box nests inside highlight — a boxed run is also highlighted and underlined');
+{
+  const text = 'Western allies present themselves as responsible nuclear actors.';
+  const attrs = buildAttrsFromSpans(text, {
+    underline: [text],
+    highlight: [{ text: 'Western allies present themselves as responsible', tier: 2 }],
+    box: ['responsible'],
+  }, 'cyan', 3);
+  const runs = runsFromAttrs(text, attrs);
+  const boxedRun = runs.find((r) => r.box);
+  check('the boxed run exists', !!boxedRun);
+  check('the boxed run is also highlighted', boxedRun?.highlight === 'cyan');
+  check('the boxed run is also underlined', boxedRun?.underline === true);
+  check('the boxed run is exactly the box text, not the whole highlight', boxedRun?.text === 'responsible', boxedRun?.text);
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 if (fail > 0) process.exit(1);

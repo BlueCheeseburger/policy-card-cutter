@@ -14,6 +14,10 @@ export function FormattedBody({ runs, className }: { runs: CardRun[]; className?
           style.color = '#000';
         }
         if (r.underline) style.textDecoration = 'underline';
+        // Matches Verbatim's "Emphasis" character style: a single-line border
+        // around the single most essential word/phrase, on top of underline
+        // and highlight — see CardRun.box's doc comment.
+        if (r.box) { style.border = '1.5px solid currentColor'; style.padding = '0 1px'; }
         if (r.fontSize && r.fontSize < 11) {
           style.fontSize = FONT_SIZE_EM[r.fontSize];
           style.opacity = 0.6;

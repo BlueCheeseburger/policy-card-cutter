@@ -18,7 +18,7 @@ Every card has three parts in this exact order:
 
 Pattern: `Lastname YY — First Last. Month Day, Year. Qualifications. Publication, "Title," URL`
 
-- Separator between the short cite and the rest: `—` (em dash with spaces on both sides)
+- Separator between the short cite and the rest: ` — ` (em dash with spaces on both sides)
 - After the em dash: full first+last name(s) → full date → author qualifications (as their own sentence) → publication name → article title in quotes → URL
 - No brackets around the URL. No period after the URL.
 - Cite is plain text — never bolded.
@@ -94,11 +94,16 @@ Haynes 25 — Abby Haynes, Catherine Sherrington, et al. 2025. Research Fellow a
 
 ## Body Format
 
+Four layers of emphasis, each nested inside the last — small connector prose is the default (nothing marked), and everything else narrows down from there:
+
 - Paste the relevant excerpt **verbatim** — do NOT paraphrase, summarize, or alter the author's words
-- **Underline** the most critical sentences/phrases using `_underscores_` (= lines read aloud in round)
-- **Bold** the most critical 1–3 words/phrases WITHIN underlined sections using `**bold`** (= double-underlined in Verbatim, used for the single most important words)
+- **Underline** the sentences/phrases the debater reads aloud, using `_underscores_`. Text left outside any underscores is context only — kept for the judge to read silently, never read aloud.
+- **Highlight** the substantive words within an underlined stretch — nearly every noun, verb, adjective, and proper noun that carries argumentative weight, skipping only grammatical connectors (a, the, of, to, in, on, that, and, or) — using `==double equals==`. A well-cut card highlights MOST of its underlined text, scattered across many short non-contiguous words/phrases, not one or two long blocks.
+- **Box** the single most essential word or short phrase within a highlighted stretch — the word a debater's eye should land on first — using `**double asterisks**`, nested inside the highlight. Verified against a real cut card's underlying `.docx` XML: this is a bordered box (Word character style `w:bdr`, single-line, auto color) layered on top of underline + highlight — **not** literal bold text and **not** a literal double-underline, despite older drafts of this file describing it that way. Sparse: usually one box per highlighted stretch, sometimes none for a minor one. A box is 1–3 words, almost never a whole sentence.
 - Cut aggressively — only include what's needed to prove the tag. Trim fat.
-- When saving to library via save_card_to_library, the body must be clean verbatim text (no markdown underscores or bold markers)
+- When saving to library via save_card_to_library, the body must be clean verbatim text (no markdown underscores, equals signs, or asterisks)
+
+See "Full Example Card" below for a real card demonstrating exactly where underline, highlight, and boxes land relative to each other.
 
 ---
 
@@ -126,6 +131,25 @@ Borsari and Davis 25 — Federico Borsari and Gordon B. Davis, Jr. December 16, 
 Deterrence in the Arctic greatly depends on situational awareness and signaling. _Drones can contribute to this key objective through what scholars have defined as "deterrence by detection," the notion that **persistent monitoring of adversary activity complicates their freedom of maneuver** and raises the costs of covert or coercive actions._ In practice, this means tracking Russian submarine patrols, monitoring aircraft flights across the Barents and Bering Seas, and detecting changes in Arctic force posture. _**Overall, multi-domain situational awareness is by far the top priority for Arctic allies given the ISR gap and increased Russian and Chinese activity in the region.**_
 ```
 
+This older example predates the highlight layer being documented above — it only shows underline (`_..._`) and box (`**...**`) directly nested, with no highlight in between. The example below is pulled verbatim from a real cut card's `.docx` (body text only changed by adding the markdown markers) and shows all three layers together, which is the standard to match going forward.
+
+### Worked example — underline, highlight, and box together
+
+```
+#### The Golden Dome undermines the nuclear order.
+
+Horovitz & Süß 25 — *researcher in SWP's International Security Research Division, **researcher in SWP's International Security Research Division (*Liviu Horovitz, **Juliana Süß, 2025, "'Golden Dome' and the Illusory Promise of Invulnerability," SWP, https://www.swp-berlin.org/en/publication/golden-dome-and-the-illusory-promise-of-invulnerability) X13
+
+Moreover, _the US government's open ==pursuit of **nuclear invulnerability**== through missile defense systems ==risks casting **doubt** on==_ the _==**diplomatic credibility**==_ of its Western allies. At international fora, _==Western allies present themselves as **responsible**== nuclear actors committed to ==preserving the== existing ==**nuclear order**==_ – in contrast with the revisionist and destructive behavior of Beijing and, in particular, Moscow. _==But this posture is **harder**== to maintain ==if Washington appears== willing to employ space-based systems_ for its own protection and thereby seeks _to ==**undermine** the deterrent== capabilities ==of other states==_; and it becomes even harder if US allies themselves support this stance.
+```
+
+What to notice:
+
+- Underline comes in **islands**, not one continuous block — "Moreover,", the lone " the " before "diplomatic credibility", the Beijing/Moscow contrast clause, and the "for its own protection and thereby seeks" clause are all left as plain connector prose (context only, never read aloud), even though they sit in the middle of the paragraph.
+- "diplomatic credibility" is its own tiny underline+highlight+box island, three words long, surrounded on both sides by unmarked prose — a box does not need a long underlined sentence around it to exist.
+- Within a highlighted stretch, the box is almost always a single word or a very short phrase ("nuclear invulnerability", "doubt", "responsible", "harder", "undermine") — never the whole highlighted clause.
+- Highlight has gaps too: inside `_the US government's open ==pursuit of **nuclear invulnerability**== through missile defense systems ==risks casting **doubt** on==_`, the phrase "through missile defense systems" is underlined but NOT highlighted — it's read aloud, but not one of the words the debater's eye is drawn to first.
+
 ---
 
 
@@ -137,7 +161,7 @@ Deterrence in the Arctic greatly depends on situational awareness and signaling.
 3. Find the 1–5 sentences that most directly prove a debate argument. Prefer specific, empirical claims over vague generalizations.
 4. Write the tag as a bold declarative claim
 5. Write the cite per the exact rules above
-6. Format the body with underscores and bold
+6. Format the body with underline, highlight, and box markers
 7. Output: Tag → Cite → Body
 8. Offer to save with `save_card_to_library`
 
@@ -151,5 +175,5 @@ Deterrence in the Arctic greatly depends on situational awareness and signaling.
 - If the author's credentials aren't in the excerpt, note "quals unknown" and continue
 - When in doubt on a time-sensitive date: ask the user for the exact publish date
 - Always trim the body to just what proves the tag — don't paste the whole article
-- For `save_card_to_library`: tag = plain text (no ####), body = clean verbatim (no underscores/bold), year = 4-digit integer
+- For `save_card_to_library`: tag = plain text (no ####), body = clean verbatim (no underscores, highlight, or box markers), year = 4-digit integer
 

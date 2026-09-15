@@ -15,12 +15,15 @@ PDF, and cut a formatted card — no account, no sign-up, nothing to install.
 3. **Refine in plain language.** A text box sends the cut card back with an
    instruction ("underline less", "highlight the statistics") instead of a
    manual underline/highlight/font-size toolbar to fight with.
-4. **Bring your own key, no account, no backend.** Gemini, Anthropic, OpenAI,
-   or Grok — your key lives only in this browser and talks directly to the
-   provider you pick. Nothing is uploaded anywhere else.
+4. **Bring your own key, no account, no backend.** Gemini, Anthropic, or your
+   own local LM Studio server — your key (or nothing, for LM Studio) lives
+   only in this browser and talks directly to the provider you pick. Nothing
+   is uploaded anywhere else. No model dropdown either — type the exact model
+   name your provider expects.
 5. **Export straight to `.docx` or plain text**, formatted the way a
    Verbatim-style card actually looks (underline = read aloud, highlight =
-   most important, small = kept for context).
+   most important, boxed = the single most essential word, small = kept for
+   context).
 
 See [changelog.md](changelog.md) for what's changed in this fork over time.
 
@@ -36,11 +39,13 @@ npm run dev
 ## Configuration
 
 None required to install — there's no `.env`. Open the app, click Settings,
-and paste an API key for whichever provider you want to use (Gemini,
-Anthropic, OpenAI, or Grok). The key is written to this browser's
+pick a provider (Gemini, Anthropic, or LM Studio), and either paste an API
+key or point it at your local LM Studio server. Type the exact model name —
+there's no dropdown, and no tier system underneath it; whatever you type is
+what every call uses. The key (if any) is written to this browser's
 `localStorage` and used directly from the page; nothing is sent anywhere
 except that provider. See "Things worth knowing" below for what that means
-for the key's safety and which providers a browser can actually reach.
+for the key's safety.
 
 ## Deploying
 
@@ -73,12 +78,16 @@ this origin can read it. Warroom encrypts stored keys with Electron's
 `safeStorage`; there is no browser equivalent to that, so this app doesn't
 pretend to have one. On a shared computer, be careful.
 
-**Only Gemini and Anthropic actually work from here.** Both serve CORS
-headers that let a browser call them directly (Anthropic needs the
+**Only three providers are offered, because they're the only three a browser
+tab can actually reach with no backend.** Gemini and Anthropic both serve
+CORS headers that let a browser call them directly (Anthropic needs the
 `anthropic-dangerous-direct-browser-access` header, which this app sends).
-OpenAI and xAI's chat-completions APIs do not send CORS headers for arbitrary
-origins, so picking those in Settings will generally fail with a browser
-network error — there is no backend here to proxy around it.
+LM Studio runs on your own machine — the page is HTTPS and LM Studio is
+`http://localhost`, which Chrome, Edge, and Firefox treat as trustworthy;
+Safari blocks it entirely. LM Studio's own CORS setting also has to be
+turned on. OpenAI and xAI were considered and dropped: their chat-completions
+APIs never send CORS headers for a browser origin, so a call to either always
+failed with a network error here — there was no working path to keep.
 
 **A card lives only as long as the tab does.** There is no database. Cut a
 card, copy it as text or download it as `.docx`, and it's gone the moment you
