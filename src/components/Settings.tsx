@@ -196,7 +196,9 @@ function PromptEditor() {
       {promptNames().map((name, i) => {
         const isOpen = open === name;
         const overridden = isPromptOverridden(name);
-        const draft = drafts[name] ?? promptSource(name);
+        const saved = promptSource(name);
+        const draft = drafts[name] ?? saved;
+        const dirty = draft !== saved;
         return (
           <div key={name} style={{ borderTop: i > 0 ? '1px solid var(--border-subtle)' : undefined, paddingTop: i > 0 ? 10 : 0, marginTop: i > 0 ? 10 : 0 }}>
             <button
@@ -221,6 +223,8 @@ function PromptEditor() {
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
                     className="btn-primary"
+                    disabled={!dirty}
+                    title={dirty ? undefined : 'No changes to save'}
                     onClick={() => { savePromptOverride(name, draft); bump((n) => n + 1); }}
                   >
                     Save
