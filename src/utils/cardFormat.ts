@@ -27,8 +27,8 @@ export const FONT_SIZE_EM: Record<number, string> = {
 
 // Per-character emphasis attributes — the editable source of truth.
 export interface CharAttr {
-  u: boolean;                // underline (read aloud)
-  hl: HighlightColor | null; // highlight color (most important read words)
+  u: boolean;                // underline — the cut, kept at full size; NOT itself read aloud
+  hl: HighlightColor | null; // highlight — what's actually read aloud, within the underlined cut
   box: boolean;              // bordered box around the single most essential word/phrase
   fs: FontSize;              // 11 = normal; 8/6/3 = shrunk context (not read)
 }

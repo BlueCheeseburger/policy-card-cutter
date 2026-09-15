@@ -10,8 +10,12 @@ export type FontSize = 11 | 8 | 6 | 3;
 
 export interface CardRun {
   text: string;
-  underline?: boolean;          // the "cut" — read aloud
-  highlight?: HighlightColor;   // emphasis on top of underline — most important read words
+  // the "cut" — the passage kept from the source, at full size. NOT itself
+  // read aloud: a debater only voices the highlighted words within it (see
+  // `highlight` below); everything underlined-but-unhighlighted stays in the
+  // card, full size, but is skipped when actually speaking.
+  underline?: boolean;
+  highlight?: HighlightColor;   // what actually gets read aloud, within the underlined cut
   // A bordered box around the single most essential word/phrase within a
   // highlighted run — real Verbatim docx's "Emphasis" character style
   // (underline + a `w:bdr` border), confirmed against an actual cut card's

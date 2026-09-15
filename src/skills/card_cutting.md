@@ -10,7 +10,7 @@ Every card has three parts in this exact order:
 
 1. **Tag** — debater's 1–2 sentence summary of the argument. Written as a declarative claim (what the card *proves*). Uses `####` heading markdown. Bold.
 2. **Cite** — author info + publication details. Plain text, NOT bolded.
-3. **Body** — the excerpt from the source. Key sentences underlined.
+3. **Body** — the excerpt from the source, underlined; the words actually read aloud are further highlighted within it.
 
 ---
 
@@ -97,8 +97,8 @@ Haynes 25 — Abby Haynes, Catherine Sherrington, et al. 2025. Research Fellow a
 Four layers of emphasis, each nested inside the last — small connector prose is the default (nothing marked), and everything else narrows down from there:
 
 - Paste the relevant excerpt **verbatim** — do NOT paraphrase, summarize, or alter the author's words
-- **Underline** the sentences/phrases the debater reads aloud, using `_underscores_`. Text left outside any underscores is context only — kept for the judge to read silently, never read aloud.
-- **Highlight** the substantive words within the underlined (read-aloud) text using `==double equals==` — this is simply the part actually being read that carries the argument, not a separate delivery instruction. Concretely: the WARRANT (the specific mechanism/reasoning that makes the claim true, not just the bare assertion that it's true), any numbers/statistics/dates/magnitudes, and the load-bearing nouns/verbs/proper nouns the argument turns on. Skip grammatical connectors (a, the, of, to, in, on, that, and, or). A well-cut card highlights MOST of its underlined text, scattered across many short non-contiguous words/phrases, not one or two long blocks.
+- **Underline** the passage kept as the cut, using `_underscores_` — the sentences/phrases pulled from the source and kept in the card at full size. Underline is NOT itself what gets read aloud: a debater only actually voices the highlighted words within it (below). Text left outside any underscores entirely is small/context — never read, never even kept at full size.
+- **Highlight** the words the debater actually reads aloud, using `==double equals==` — must sit inside an underlined stretch. Concretely: the WARRANT (the specific mechanism/reasoning that makes the claim true, not just the bare assertion that it's true), any numbers/statistics/dates/magnitudes, and the load-bearing nouns/verbs/proper nouns the argument turns on. Skip grammatical connectors (a, the, of, to, in, on, that, and, or) — those aren't voiced either way. A well-cut card highlights MOST of its underlined text (most of what's kept IS read aloud), scattered across many short non-contiguous words/phrases, not one or two long blocks.
 - **Box** — nested inside the highlight, using `**double asterisks**` — marks specific numbers and evidentiary statistics within the highlighted text, and otherwise whichever word or short phrase in a highlighted stretch is the single strongest point of emphasis. It isn't a pacing or delivery cue — just which content gets the most visual weight. Verified against a real cut card's underlying `.docx` XML: this is a bordered box (Word character style `w:bdr`, single-line, auto color) layered on top of underline + highlight — **not** literal bold text and **not** a literal double-underline, despite older drafts of this file describing it that way. Sparse: usually one box per highlighted stretch, sometimes none for a minor one. A box is 1–3 words, almost never a whole sentence.
 - Cut aggressively — only include what's needed to prove the tag. Trim fat.
 - When saving to library via save_card_to_library, the body must be clean verbatim text (no markdown underscores, equals signs, or asterisks)
@@ -148,7 +148,7 @@ What to notice:
 - Underline comes in **islands**, not one continuous block — "Moreover,", the lone " the " before "diplomatic credibility", the Beijing/Moscow contrast clause, and the "for its own protection and thereby seeks" clause are all left as plain connector prose (context only, never read aloud), even though they sit in the middle of the paragraph.
 - "diplomatic credibility" is its own tiny underline+highlight+box island, three words long, surrounded on both sides by unmarked prose — a box does not need a long underlined sentence around it to exist.
 - Within a highlighted stretch, the box is almost always a single word or a very short phrase ("nuclear invulnerability", "doubt", "responsible", "harder", "undermine") — never the whole highlighted clause.
-- Highlight has gaps too: inside `_the US government's open ==pursuit of **nuclear invulnerability**== through missile defense systems ==risks casting **doubt** on==_`, the phrase "through missile defense systems" is underlined but NOT highlighted — it's read aloud, but not one of the words the debater's eye is drawn to first.
+- Highlight has gaps too: inside `_the US government's open ==pursuit of **nuclear invulnerability**== through missile defense systems ==risks casting **doubt** on==_`, the phrase "through missile defense systems" is underlined but NOT highlighted — it stays in the card at full size as part of the cut, but a debater reading this card out loud skips straight past it to the next highlighted stretch.
 
 ---
 
