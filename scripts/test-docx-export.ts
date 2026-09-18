@@ -1,5 +1,5 @@
 // Verifies exportCardToDocx's output XML against the real Verbatim styles
-// found in two actual cut cards' underlying .docx ('Sample Card 1.docx' and
+// found in two actual cut cards' underlying .docx ('Sample Cards 1.docx' and
 // a Golden Dome card from a real speech doc) — not just eyeballed once.
 // New styling regressions (wrong size, missing border, bold leaking into
 // the wrong run, etc.) show up here as a failing check instead of a silently
@@ -126,6 +126,18 @@ console.log('\n[7] box/emphasis run: underline + highlight + the real single-lin
 {
   const rPr = rPrBefore(xml, 'bleak');
   check('second boxed word also gets the border', /<w:bdr w:val="single"/.test(rPr), rPr);
+}
+
+console.log('\n[8] box without highlight exports the border + underline but no highlight');
+{
+  const xml2 = await documentXml({
+    ...card,
+    bodyRuns: [{ text: 'Republican House', underline: true, box: true }],
+  });
+  const rPr = rPrBefore(xml2, 'Republican House');
+  check('single-line border', /<w:bdr w:val="single"/.test(rPr), rPr);
+  check('underlined', /<w:u w:val="single"/.test(rPr), rPr);
+  check('no highlight', !/<w:highlight/.test(rPr), rPr);
 }
 
 console.log(`\n${pass} passed, ${fail} failed\n`);

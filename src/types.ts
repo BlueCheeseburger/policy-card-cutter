@@ -16,12 +16,12 @@ export interface CardRun {
   // card, full size, but is skipped when actually speaking.
   underline?: boolean;
   highlight?: HighlightColor;   // what actually gets read aloud, within the underlined cut
-  // A bordered box around the single most essential word/phrase within a
-  // highlighted run — real Verbatim docx's "Emphasis" character style
-  // (underline + a `w:bdr` border), confirmed against an actual cut card's
-  // XML. Always shown regardless of the highlight-density slider, same as
-  // underline — it marks the words a debater reads even faster than the
-  // rest of the highlight, not an extra density tier.
+  // A bordered box on a key word/phrase or number — real Verbatim docx's
+  // "Emphasis" character style (underline + a `w:bdr` border), confirmed
+  // against actual cut cards' XML. Independent of highlight: it may sit on a
+  // highlighted word or on underlined-but-unhighlighted text, but is always
+  // underlined. Always shown regardless of the highlight-density slider,
+  // same as underline — not an extra density tier.
   box?: boolean;
   fontSize?: FontSize;          // omit/11 = normal; 8/6/3 = shrunk context NOT read aloud
 }
@@ -74,8 +74,8 @@ export interface CutterEmphasis {
   taglines: string[];
   underline: string[];
   highlight: HighlightSpan[];
-  // The single most essential word/phrase within the highlighted text —
-  // gets a bordered box in addition to underline+highlight. See CardRun.box.
+  // Key words/phrases/numbers that get a bordered box (always underlined too);
+  // may or may not also be highlighted. See CardRun.box.
   box: string[];
   small: string[];
 }

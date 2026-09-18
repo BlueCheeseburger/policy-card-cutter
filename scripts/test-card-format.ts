@@ -127,5 +127,20 @@ console.log('\n[7] box nests inside highlight — a boxed run is also highlighte
   check('the boxed run is exactly the box text, not the whole highlight', boxedRun?.text === 'responsible', boxedRun?.text);
 }
 
+console.log('\n[8] box without highlight — still underlined, gets the box, no highlight color (real Emphasis-without-highlight runs)');
+{
+  const text = 'that could net five Republican House seats in November.';
+  const attrs = buildAttrsFromSpans(text, {
+    underline: [text],
+    highlight: [{ text: 'net five', tier: 1 }],
+    box: ['Republican House'],
+  }, 'cyan', 3);
+  const runs = runsFromAttrs(text, attrs);
+  const boxed = runs.find((r) => r.box);
+  check('the box lands on the unhighlighted words', boxed?.text === 'Republican House', boxed?.text);
+  check('boxed-but-unhighlighted run has no highlight color', boxed?.highlight === undefined);
+  check('boxed-but-unhighlighted run is still underlined', boxed?.underline === true);
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 if (fail > 0) process.exit(1);

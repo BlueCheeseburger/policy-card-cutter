@@ -99,7 +99,7 @@ Four layers of emphasis, each nested inside the last — small connector prose i
 - Paste the relevant excerpt **verbatim** — do NOT paraphrase, summarize, or alter the author's words
 - **Underline** the passage kept as the cut, using `_underscores_` — the sentences/phrases pulled from the source and kept in the card at full size. Underline is NOT itself what gets read aloud: a debater only actually voices the highlighted words within it (below). Text left outside any underscores entirely is small/context — never read, never even kept at full size. Underline ALWAYS covers more than what's highlighted — it always has context: the underlined-but-unhighlighted words in between are what make the highlighted words parse as an actual sentence (subjects, secondary verbs, connectors, articles), not wasted space.
 - **Highlight** the words the debater actually reads aloud, using `==double equals==` — must sit inside an underlined stretch, and must never cover the ENTIRE underlined stretch with no gaps. Concretely: the WARRANT (the specific mechanism/reasoning that makes the claim true, not just the bare assertion that it's true), any numbers/statistics/dates/magnitudes, and the load-bearing nouns/verbs/proper nouns the argument turns on. Skip grammatical connectors (a, the, of, to, in, on, that, and, or) — those aren't voiced either way, and stay as the underline's surrounding context. A well-cut card highlights MOST of its underlined text (most of what's kept IS read aloud), scattered across many short non-contiguous words/phrases, not one or two long blocks — every stretch keeps some unhighlighted context around it.
-- **Box** — nested inside the highlight, using `**double asterisks**` — marks specific numbers and evidentiary statistics within the highlighted text, and otherwise whichever word or short phrase in a highlighted stretch is the single strongest point of emphasis. It isn't a pacing or delivery cue — just which content gets the most visual weight. Verified against a real cut card's underlying `.docx` XML: this is a bordered box (Word character style `w:bdr`, single-line, auto color) layered on top of underline + highlight — **not** literal bold text and **not** a literal double-underline, despite older drafts of this file describing it that way. Sparse: usually one box per highlighted stretch, sometimes none for a minor one. A box is 1–3 words, almost never a whole sentence.
+- **Box** — using `**double asterisks**` — marks specific numbers and evidentiary statistics, and otherwise a key word or short phrase that deserves the strongest emphasis. It isn't a pacing or delivery cue — just which content gets the most visual weight. Verified against real cut cards' underlying `.docx` XML: this is a bordered box (Word character style `w:bdr`, single-line, auto color) whose style also carries its own underline — **not** literal bold text and **not** a literal double-underline, despite older drafts of this file describing it that way. **Box is independent of highlight**: it must sit inside the underlined cut, but it can land on a highlighted word (the common case — the strongest word in a highlighted stretch) OR on underlined-but-unhighlighted text (a key term, name, or number worth emphasizing that isn't part of the tight highlighted read). Either way it is always underlined. Sparse; a box is 1–3 words, almost never a whole sentence.
 - Cut aggressively — only include what's needed to prove the tag. Trim fat.
 - When saving to library via save_card_to_library, the body must be clean verbatim text (no markdown underscores, equals signs, or asterisks)
 
@@ -149,6 +149,26 @@ What to notice:
 - "diplomatic credibility" is its own tiny underline+highlight+box island, three words long, surrounded on both sides by unmarked prose — a box does not need a long underlined sentence around it to exist.
 - Within a highlighted stretch, the box is almost always a single word or a very short phrase ("nuclear invulnerability", "doubt", "responsible", "harder", "undermine") — never the whole highlighted clause.
 - Highlight has gaps too: inside `_the US government's open ==pursuit of **nuclear invulnerability**== through missile defense systems ==risks casting **doubt** on==_`, the phrase "through missile defense systems" is underlined but NOT highlighted — it stays in the card at full size as part of the cut, but a debater reading this card out loud skips straight past it to the next highlighted stretch.
+
+### Worked example — box on text that isn't highlighted
+
+Box does not require a highlight. In this real card, several boxed words sit in plain underlined (unhighlighted) text — still underlined, because a box is always on underlined text:
+
+```
+#### Trump cheats through multiple pathways. At worst, he'll call off the midterms.
+
+_In July, ==he demanded== that ==**Texas** undergo== an unorthodox, mid-decade ==**redistricting**== that could net five **Republican House** seats in November_. California countered with a redistricting plan of its own...
+
+_The ==**DOJ**== has ==demanded **unredacted** voter files from all== **50 **==**states**==_. _Twenty-three states and the District of Columbia have not complied_. No surprise, _==**Trump**== & Co. are ==suing== them_.
+
+_**Voter **==**files**== are a ==critical== weapon ==for== _voter ==**suppression** and== **election **==**subversion**==_.
+```
+
+What to notice:
+
+- "Republican House" and "50" are boxed but NOT highlighted — the debater is emphasizing a specific term/number that isn't part of the tight highlighted read, but it's still underlined (a box always is).
+- Boxes also sit on highlighted words in the same paragraph ("Texas", "redistricting", "DOJ", "unredacted", "states") — the two cases mix freely inside one card.
+- A boxed phrase can straddle both: "Voter files" is a box where "Voter" is unhighlighted and "files" is highlighted.
 
 ---
 
