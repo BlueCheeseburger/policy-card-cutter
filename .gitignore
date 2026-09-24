@@ -13,7 +13,6 @@ dist-ssr
 *.local
 
 # Claude Code project instructions — not for the repo
-CLAUDE.md
 
 # Editor directories and files
 .vscode/*
