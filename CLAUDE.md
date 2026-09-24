@@ -21,7 +21,6 @@ Add a reference to `changelog.md` to have our fork's changes there. Have a `chan
 ## Misc
 
 - Do not include my personal info in your commits.
-- Make sure `CLAUDE.md` is gitignored.
 - Keep commit messages short
 - Automatically push and commit after major features have been pushed
 - **This only applies to local sessions, do not do this if you are a cloud session:** You are going to be following the look and feel from my other policy debate project, policy-flow, so you can message that agent at any time with questions, but the codebase for policy-flow is `Downloads/policy-flow`, so you can always just look at the actual code, just don't edit that code since its not your codebase.
