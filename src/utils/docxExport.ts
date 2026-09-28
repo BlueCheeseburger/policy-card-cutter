@@ -6,7 +6,8 @@
 // - Whole document: Times New Roman, 11pt (docDefaults: rFonts Times New
 //   Roman, sz 22 half-points) — every run below sets both explicitly rather
 //   than relying on the docx library's own defaults (Calibri, different size).
-// - Tagline: bold, 13pt (sz 26) — Heading4's real rPr, aliased "Tag".
+// - Tagline: bold, 13pt (sz 26) — Heading4's real rPr, aliased "Tag". Parts
+//   marked `_..._` in the tag string are underlined.
 // - Cite: only the short-cite prefix before the first " — " is bold + 13pt
 //   (Style13ptBold, aliased "Cite"); the rest of the cite is plain 11pt —
 //   confirmed in both sample cards ("Hirsh 25" / "Horovitz & Süß 25" bold,
@@ -27,6 +28,7 @@
 
 import { Document, Packer, Paragraph, TextRun, BorderStyle } from 'docx';
 import type { Card, HighlightColor } from '../types';
+import { parseTagRuns } from './cardFormat';
 
 const FONT = 'Times New Roman';
 const BLACK = '000000';
@@ -42,7 +44,9 @@ const HIGHLIGHT_TO_DOCX: Record<HighlightColor, 'yellow' | 'cyan' | 'green'> = {
 const BOX_BORDER = { style: BorderStyle.SINGLE, size: 8, space: 0, color: 'auto' };
 
 export async function exportCardToDocx(card: Card): Promise<Blob> {
-  const tagRun = new TextRun({ text: card.tag, font: FONT, color: BLACK, bold: true, size: 26 });
+  const tagRuns = parseTagRuns(card.tag).map((r) => new TextRun({
+    text: r.text, font: FONT, color: BLACK, bold: true, size: 26, underline: r.underline ? {} : undefined,
+  }));
 
   // Only the short-cite prefix ("Lastname YY" / "Lastname M-D") is bold+13pt;
   // everything from the " — " separator onward (including the dash) is
@@ -68,7 +72,7 @@ export async function exportCardToDocx(card: Card): Promise<Blob> {
   const doc = new Document({
     sections: [{
       children: [
-        new Paragraph({ spacing: { before: 200 }, children: [tagRun] }),
+        new Paragraph({ spacing: { before: 200 }, children: tagRuns }),
         new Paragraph({ children: citeRuns }),
         new Paragraph({ children: bodyRuns }),
       ],

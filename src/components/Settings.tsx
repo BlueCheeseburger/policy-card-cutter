@@ -4,9 +4,7 @@ import type { HighlightLevel } from '../utils/cardFormat';
 import { HIGHLIGHT_SWATCH } from '../utils/cardFormat';
 import type { Settings as SettingsType } from '../platform/settings';
 import { readSettings, writeSettings, clearAll } from '../platform/settings';
-import {
-  promptNames, promptSource, isPromptOverridden, savePromptOverride, resetPromptOverride,
-} from '../platform/ai';
+import { BUNDLED_CITE_RULES, currentCiteRules } from '../platform/ai';
 
 // A full page (not a modal) — same structural pattern as policy-flow's own
 // Settings.tsx: a scrollable column of bordered "card" sections, each with a
@@ -123,14 +121,14 @@ export default function Settings({ onClose }: { onClose: () => void }) {
             </Row>
           )}
 
-          <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <h3 className="label" style={{ margin: 0 }}>Prompts</h3>
-            <p style={{ fontSize: 13, margin: 0 }}>Exactly what gets sent to the model for reading a source and cutting a card. Read them, or edit and save your own version.</p>
-            <PromptEditor />
-          </div>
         </Section>
 
         <Section title="Card cutting">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <h3 className="label" style={{ margin: 0 }}>How to cut cites</h3>
+            <p style={{ fontSize: 13, margin: 0 }}>The rules the AI follows when writing a card's cite. Starts with our standard rules — change them to match how your team cuts cites.</p>
+            <CiteRulesEditor />
+          </div>
           <Row label="Default highlight color" hint="Seeds the color picker for a new cut; you can still change it per card.">
             <div style={{ display: 'flex', gap: 8 }}>
               {COLORS.map((c) => (
@@ -158,7 +156,7 @@ export default function Settings({ onClose }: { onClose: () => void }) {
 
         <Section title="Clear local data" danger>
           <p style={{ fontSize: 14, lineHeight: 1.5, margin: 0 }}>
-            Erases your API keys, provider choice, prompt edits, and every other preference stored
+            Erases your API keys, provider choice, cite rules, and every other preference stored
             in this browser. There are no cards or accounts to lose — a card only ever lives until
             you close its tab.
           </p>
@@ -179,63 +177,41 @@ export default function Settings({ onClose }: { onClose: () => void }) {
   );
 }
 
-function PromptEditor() {
-  const [open, setOpen] = useState<string | null>(null);
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
-  const [, bump] = useState(0);
-
+function CiteRulesEditor() {
+  const [saved, setSaved] = useState(() => currentCiteRules());
+  const [draft, setDraft] = useState(saved);
+  const dirty = draft !== saved;
+  const isDefault = saved === BUNDLED_CITE_RULES;
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      {promptNames().map((name, i) => {
-        const isOpen = open === name;
-        const overridden = isPromptOverridden(name);
-        const saved = promptSource(name);
-        const draft = drafts[name] ?? saved;
-        const dirty = draft !== saved;
-        return (
-          <div key={name} style={{ borderTop: i > 0 ? '1px solid var(--border-subtle)' : undefined, paddingTop: i > 0 ? 10 : 0, marginTop: i > 0 ? 10 : 0 }}>
-            <button
-              className="btn"
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', boxShadow: 'none', padding: '6px 0' }}
-              onClick={() => setOpen(isOpen ? null : name)}
-            >
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-                {name}{overridden && <span style={{ color: 'var(--accent)' }}> · edited</span>}
-              </span>
-              <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>{isOpen ? 'Hide' : 'Edit'}</span>
-            </button>
-            {isOpen && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 6 }}>
-                <textarea
-                  className="input"
-                  style={{ fontFamily: 'var(--font-mono)', fontSize: 11, lineHeight: 1.5, minHeight: 240, resize: 'vertical' }}
-                  spellCheck={false}
-                  value={draft}
-                  onChange={(e) => setDrafts((d) => ({ ...d, [name]: e.target.value }))}
-                />
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    className="btn-primary"
-                    disabled={!dirty}
-                    title={dirty ? undefined : 'No changes to save'}
-                    onClick={() => { savePromptOverride(name, draft); bump((n) => n + 1); }}
-                  >
-                    Save
-                  </button>
-                  <button
-                    className="btn"
-                    disabled={!overridden}
-                    onClick={() => { resetPromptOverride(name); setDrafts((d) => ({ ...d, [name]: promptSource(name) })); bump((n) => n + 1); }}
-                    title="Restore the bundled default text"
-                  >
-                    Reset to default
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <textarea
+        className="input"
+        style={{ fontFamily: 'var(--font-mono)', fontSize: 11, lineHeight: 1.5, minHeight: 320, resize: 'vertical' }}
+        spellCheck={false}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+      />
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button
+          className="btn-primary"
+          disabled={!dirty}
+          title={dirty ? undefined : 'No changes to save'}
+          onClick={() => {
+            writeSettings({ citeRules: draft === BUNDLED_CITE_RULES ? undefined : draft });
+            setSaved(draft);
+          }}
+        >
+          Save
+        </button>
+        <button
+          className="btn"
+          disabled={isDefault && !dirty}
+          onClick={() => { writeSettings({ citeRules: undefined }); setSaved(BUNDLED_CITE_RULES); setDraft(BUNDLED_CITE_RULES); }}
+          title="Restore the standard cite rules"
+        >
+          Reset to default
+        </button>
+      </div>
     </div>
   );
 }

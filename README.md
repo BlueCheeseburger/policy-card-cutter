@@ -6,9 +6,10 @@ PDF, and cut a formatted card — no account, no sign-up, nothing to install.
 ## The five biggest things it does
 
 1. **Full AI card cutting from a real source.** Point it at a saved article
-   or PDF and it reads the cite, the real body paragraphs (boilerplate, nav,
-   and newsletter prompts filtered out), and the images — then decides what
-   to underline, highlight, and shrink, and proposes 1–2 taglines.
+   (.html or .mhtml) or PDF and it reads the cite and the real body
+   paragraphs (boilerplate, nav, and newsletter prompts filtered out) — then
+   decides what to underline, highlight, box, and shrink, and writes 1–2
+   taglines. The finished card shows as one page, exactly as it'll paste.
 2. **Highlight density, no extra AI call.** One AI response is tiered
    (essential / standard / full); the Less/Medium/More slider re-renders
    instantly by filtering locally, instead of re-cutting the card three times.
@@ -20,10 +21,9 @@ PDF, and cut a formatted card — no account, no sign-up, nothing to install.
    only in this browser and talks directly to the provider you pick. Nothing
    is uploaded anywhere else. No model dropdown either — type the exact model
    name your provider expects.
-5. **Export straight to `.docx` or plain text**, formatted the way a
-   Verbatim-style card actually looks (underline = read aloud, highlight =
-   most important, boxed = the single most essential word, small = kept for
-   context).
+5. **Export straight to `.docx` or plain text**, using the real Verbatim
+   styles (tag, cite, underline, highlight, emphasis box, small text). Your
+   team's own cite rules can replace ours in Settings.
 
 See [changelog.md](changelog.md) for what's changed in this fork over time.
 
@@ -65,7 +65,7 @@ scripts/        headless tests for src/utils
 
 `src/utils` has no dependency beyond the DOM and the browser's own `fetch`,
 which is why the tests in `scripts/` can run it headlessly. Anything that
-reaches outward — the AI provider, the file/folder picker, settings —
+reaches outward — the AI provider, the file picker, settings —
 lives in `src/platform` behind a small interface (`files.ts`, `settings.ts`,
 `ai.ts`), so the parts worth trusting stay testable and the parts that can
 fail stay in one place.
@@ -94,11 +94,7 @@ card, copy it as text or download it as `.docx`, and it's gone the moment you
 close the tab or cut another one. This is deliberate, not a missing feature —
 see "Relationship to Warroom" below.
 
-**Images in a saved page need the whole folder, not just the `.html`.**
-Saving a page as "Webpage, Complete" writes a sibling `..._files/` folder for
-its images; a browser can't reach that folder from a single-file picker. Use
-"Choose a saved-page folder" instead of "Choose a file" and it resolves the
-relative image paths against everything in it.
+**Text only.** Cards carry no images; a saved page's pictures are ignored.
 
 ## Rules the code follows
 

@@ -26,29 +26,17 @@ export interface CardRun {
   fontSize?: FontSize;          // omit/11 = normal; 8/6/3 = shrunk context NOT read aloud
 }
 
-export interface CardImage {
-  src: string;   // data: URL (inlined) or remote http(s) URL
-  alt?: string;
-}
-
 export interface Card {
   id: string;
   tag: string;
   cite: string;
   body: string;
   bodyRuns: CardRun[];
-  images?: CardImage[];
   year: number;
   createdAt: string;
 }
 
 // ─── Card cutter (guided cut from a PDF or a saved web page) ────────────────
-
-export interface CutterImage {
-  src: string;
-  alt?: string;
-  suggested?: boolean; // Warroom AI thinks this image is genuinely part of the article
-}
 
 export interface CutterSource {
   ok: boolean;
@@ -60,7 +48,6 @@ export interface CutterSource {
   year: number;
   url: string;
   paragraphs: string[];
-  images: CutterImage[];
 }
 
 // tier 1 = single most essential highlight (always shown, even at the lowest

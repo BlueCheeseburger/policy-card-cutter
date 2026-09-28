@@ -9,7 +9,7 @@
 //
 // Run:  npx tsx scripts/test-card-format.ts
 
-import { buildAttrsFromSpans, runsFromAttrs, runsToPlain } from '../src/utils/cardFormat';
+import { buildAttrsFromSpans, runsFromAttrs, runsToPlain, parseTagRuns, plainTag } from '../src/utils/cardFormat';
 
 let pass = 0, fail = 0;
 function check(name: string, cond: boolean, extra = '') {
@@ -140,6 +140,14 @@ console.log('\n[8] box without highlight — still underlined, gets the box, no 
   check('the box lands on the unhighlighted words', boxed?.text === 'Republican House', boxed?.text);
   check('boxed-but-unhighlighted run has no highlight color', boxed?.highlight === undefined);
   check('boxed-but-unhighlighted run is still underlined', boxed?.underline === true);
+}
+
+console.log('\n[9] tagline _underline_ markers parse into runs, caps untouched');
+{
+  const runs = parseTagRuns('Surveillance _DETERS_ — _detection forces_ restraint');
+  check('underlined pieces found', runs.filter((r) => r.underline).map((r) => r.text).join('|') === 'DETERS|detection forces');
+  check('plain text drops the markers', plainTag('Surveillance _DETERS_ — _detection forces_ restraint') === 'Surveillance DETERS — detection forces restraint');
+  check('lone underscore kept as text', plainTag('snake_case tag') === 'snake_case tag');
 }
 
 console.log(`\n${pass} passed, ${fail} failed\n`);

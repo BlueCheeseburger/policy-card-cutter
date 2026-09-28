@@ -18,40 +18,32 @@
 // CORS note below and the README for what that costs.
 
 import cardCuttingSkill from '../skills/card_cutting.md?raw';
+import citeRulesBundled from '../skills/cite_rules.md?raw';
 import type { AIClarification, CutterEmphasis, CutterSource, HighlightSpan } from '../types';
-import type { PromptName } from './settings';
-import { readSettings, writeSettings } from './settings';
-import { resolveFile, resolveFolder, isFolderHandle } from './files';
-import { readSingleFile, readFolderSource } from '../utils/readSource';
-import { renderPrompt, capForPrompt, getBundledPromptTemplate, PROMPT_NAMES } from '../utils/prompt';
+import { readSettings } from './settings';
+import { resolveFile } from './files';
+import { readSingleFile } from '../utils/readSource';
+import { renderPrompt, capForPrompt } from '../utils/prompt';
 
-// The bundled, as-shipped text for everything the Settings → Prompts editor
-// lists — the two AI prompts plus the card-cutting skill markdown, which is
-// injected into both prompts as {{CARD_CUTTING_SKILL}}. Edits are stored as a
-// full-text override in Settings and checked here before falling back to
-// this bundled copy.
-function bundledPromptText(name: PromptName): string {
-  return name === 'card_cutting_skill' ? cardCuttingSkill : getBundledPromptTemplate(name);
+// The cite-cutting rules are the one user-editable part of the prompts
+// (Settings → Card cutting → Cite rules); they're injected into the skill,
+// which is in turn injected into both prompts as {{CARD_CUTTING_SKILL}}.
+export const BUNDLED_CITE_RULES = citeRulesBundled;
+
+export function currentCiteRules(): string {
+  return readSettings().citeRules ?? citeRulesBundled;
 }
 
 function currentSkillText(): string {
-  return readSettings().promptOverrides?.card_cutting_skill ?? cardCuttingSkill;
+  return cardCuttingSkill.replace('{{CITE_RULES}}', currentCiteRules());
 }
 
 // ─── The two feature contracts CardCutter.tsx calls ────────────────────────
 
 export async function cutterReadSource(fileHandle: string): Promise<CutterSource> {
-  const raw = isFolderHandle(fileHandle)
-    ? await (async () => {
-        const files = resolveFolder(fileHandle);
-        if (!files) throw new Error('That source is no longer available — pick it again.');
-        return readFolderSource(files);
-      })()
-    : await (async () => {
-        const file = resolveFile(fileHandle);
-        if (!file) throw new Error('That source is no longer available — pick it again.');
-        return readSingleFile(file);
-      })();
+  const file = resolveFile(fileHandle);
+  if (!file) throw new Error('That source is no longer available — pick it again.');
+  const raw = await readSingleFile(file);
 
   const today = new Date();
   const rawParagraphs = Array.from(new Set(raw.rawParagraphs)).slice(0, 400);
@@ -59,7 +51,6 @@ export async function cutterReadSource(fileHandle: string): Promise<CutterSource
 
   const todayStr = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const numbered = capForPrompt(rawParagraphs.map((p, i) => `[${i}] ${p}`).join('\n'), 90000, 'this article');
-  const imgList = raw.images.length ? raw.images.map((im, i) => `[${i}] ${im.alt ? 'alt: ' + im.alt : '(no alt text)'}`).join('\n') : '(none)';
 
   // Gemini can look up author credentials via Search grounding when they're
   // missing from the article text; other providers can't, so they get a
@@ -71,16 +62,13 @@ export async function cutterReadSource(fileHandle: string): Promise<CutterSource
     : 'IMPORTANT: if the author\'s credentials are not present in the article text, make your best effort from context clues, or write "credentials not found" in that position.';
 
   const prompt = renderPrompt('cutter_read_source', {
-    IMAGES_NOTE: raw.images.length ? ', plus a list of its images' : '',
     TODAY_STR: todayStr,
     CARD_CUTTING_SKILL: currentSkillText(),
     CURRENT_YEAR: String(today.getFullYear()),
     META_URL_OR_NOTE: raw.metaUrl || '(none — omit the URL)',
     CREDENTIALS_INSTRUCTION: credentialsInstruction,
-    CITE_YEAR_RULE: citeYearRuleText(),
     PARAGRAPHS: numbered,
-    IMAGES: imgList,
-  }, settings.promptOverrides?.cutter_read_source);
+  });
 
   const readRaw = await callAIWithSearch(prompt, 65536);
   const parsed = parseJsonLoose(readRaw);
@@ -92,8 +80,6 @@ export async function cutterReadSource(fileHandle: string): Promise<CutterSource
     ? parsed.bodyIndices.filter((n: any) => Number.isInteger(n) && n >= 0 && n < rawParagraphs.length)
     : [];
   const paragraphs = bodyIndices.length ? bodyIndices.map((i) => rawParagraphs[i]) : rawParagraphs;
-  const imgIdx = new Set<number>(Array.isArray(parsed.imageIndices) ? parsed.imageIndices : []);
-  const outImages = raw.images.map((im, i) => ({ src: im.src, alt: im.alt, suggested: imgIdx.has(i) }));
   const year = Number(String(parsed.year).match(/\d{4}/)?.[0]) || today.getFullYear();
 
   return {
@@ -105,7 +91,6 @@ export async function cutterReadSource(fileHandle: string): Promise<CutterSource
     year,
     url: String(parsed.url ?? raw.metaUrl ?? '').trim(),
     paragraphs,
-    images: outImages,
   };
 }
 
@@ -144,7 +129,7 @@ export async function cutterEmphasize(params: {
     CLARIFICATIONS_JSON: clar.length ? JSON.stringify(clar) : '(none yet)',
     QUESTIONS_ASKED: refine ? '1' : String(clar.length),
     REFINEMENT_NOTE: refinementNote,
-  }, readSettings().promptOverrides?.cutter_emphasize);
+  });
 
   const emphRaw = await callAI(prompt, 65536);
   const parsed = parseJsonLoose(emphRaw);
@@ -177,42 +162,6 @@ export async function cutterEmphasize(params: {
   }
   if (taglines.length === 0) taglines = ['Untitled card'];
   return { ok: true, taglines, underline: arr(parsed.underline), highlight, box: arr(parsed.box), small: arr(parsed.small) };
-}
-
-// ─── Prompt editor (Settings page) ──────────────────────────────────────────
-// Read-and-edit access to everything sent to the model: the two AI prompts,
-// plus the card-cutting skill markdown they both embed. An edit is stored as
-// a full replacement in Settings, checked above before falling back to the
-// bundled file — same "user override beats bundled default" shape as
-// Warroom's own user-editable prompts (userPromptsDir checked before
-// bundledPromptsDir).
-
-export function promptNames(): PromptName[] {
-  return [...PROMPT_NAMES, 'card_cutting_skill'] as PromptName[];
-}
-
-export function promptSource(name: PromptName): string {
-  return readSettings().promptOverrides?.[name] ?? bundledPromptText(name);
-}
-
-export function isPromptOverridden(name: PromptName): boolean {
-  return readSettings().promptOverrides?.[name] !== undefined;
-}
-
-export function savePromptOverride(name: PromptName, text: string): void {
-  const current = readSettings();
-  writeSettings({ promptOverrides: { ...current.promptOverrides, [name]: text } });
-}
-
-export function resetPromptOverride(name: PromptName): void {
-  const current = readSettings();
-  const next = { ...current.promptOverrides };
-  delete next[name];
-  writeSettings({ promptOverrides: next });
-}
-
-function citeYearRuleText(): string {
-  return 'Sources dated within roughly the past two months (relative to today) use a month-day short cite (e.g. "Brady 3-15"), with the full year in the body of the cite; anything older uses a two-digit year (e.g. "Brady 26").';
 }
 
 // ─── Provider-calling engine (no Warroom equivalent — see file header) ─────

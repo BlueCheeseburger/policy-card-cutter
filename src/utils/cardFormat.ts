@@ -128,3 +128,25 @@ export function runsFromAttrs(text: string, attrs: CharAttr[]): CardRun[] {
 export function runsToPlain(runs: CardRun[] | undefined): string {
   return (runs ?? []).map((r) => r.text).join('');
 }
+
+// A tagline marks its underlined words with `_..._` (see the card-cutting
+// skill's Tag Format). Splits it into plain/underlined pieces; unmatched
+// underscores are kept as literal text.
+export interface TagRun { text: string; underline: boolean }
+
+export function parseTagRuns(tag: string): TagRun[] {
+  const runs: TagRun[] = [];
+  const re = /_([^_]+)_/g;
+  let last = 0;
+  for (let m = re.exec(tag); m; m = re.exec(tag)) {
+    if (m.index > last) runs.push({ text: tag.slice(last, m.index), underline: false });
+    runs.push({ text: m[1], underline: true });
+    last = m.index + m[0].length;
+  }
+  if (last < tag.length) runs.push({ text: tag.slice(last), underline: false });
+  return runs;
+}
+
+export function plainTag(tag: string): string {
+  return parseTagRuns(tag).map((r) => r.text).join('');
+}

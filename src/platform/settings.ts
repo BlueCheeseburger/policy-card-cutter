@@ -1,4 +1,4 @@
-// App settings (AI provider + key/model, cite-year format) persisted to
+// App settings (AI provider + key/model, cite rules, highlight defaults) persisted to
 // localStorage.
 //
 // This is genuinely new surface, not a preserved Warroom contract: Warroom's
@@ -13,10 +13,6 @@ import type { AIProvider, HighlightColor } from '../types';
 import type { HighlightLevel } from '../utils/cardFormat';
 
 const KEY = 'pcc:settings';
-
-// The two AI prompts plus the card-cutting skill file — all three editable
-// from Settings → AI → Prompts.
-export type PromptName = 'cutter_read_source' | 'cutter_emphasize' | 'card_cutting_skill';
 
 export interface Settings {
   provider: AIProvider;
@@ -33,9 +29,9 @@ export interface Settings {
   // Seeds a new cut's color/density pickers; each cut can still change them.
   defaultHighlightColor?: HighlightColor;
   defaultHighlightLevel?: HighlightLevel;
-  // A user edit of a bundled prompt/skill, keyed by name. Read/rendered in
-  // place of the bundled file when present — see platform/ai.ts.
-  promptOverrides?: Partial<Record<PromptName, string>>;
+  // The user's own cite-cutting rules, replacing the bundled
+  // skills/cite_rules.md when set. The only part of the prompts a user can edit.
+  citeRules?: string;
 }
 
 const DEFAULT_SETTINGS: Settings = {

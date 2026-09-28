@@ -1,41 +1,41 @@
-import type { CardRun, CardImage } from '../types';
-import { HIGHLIGHT_CSS, FONT_SIZE_EM } from '../utils/cardFormat';
+import type { Card, CardRun } from '../types';
+import { HIGHLIGHT_CSS, FONT_SIZE_EM, parseTagRuns } from '../utils/cardFormat';
 
-// Renders a formatted card body (underline / highlight / font-size) read-only.
-// Highlight text is always rendered in black so it stays legible against a
-// full-saturation highlight background in both light and dark mode.
-export function FormattedBody({ runs, className }: { runs: CardRun[]; className?: string }) {
+// The whole cut card — tag, cite, body — as one read-only page, styled like
+// the exported Verbatim .docx: white paper and black text in every theme,
+// Times New Roman, 13pt bold tag, bold short cite. Small text is shrunk but
+// stays black, same as in Word.
+export function CardView({ card }: { card: Pick<Card, 'tag' | 'cite' | 'bodyRuns'> }) {
+  const dashIdx = card.cite.indexOf(' — ');
+  const citeShort = dashIdx >= 0 ? card.cite.slice(0, dashIdx) : card.cite;
+  const citeRest = dashIdx >= 0 ? card.cite.slice(dashIdx) : '';
   return (
-    <div className={`card-body-text ${className ?? ''}`}>
-      {runs.map((r, i) => {
-        const style: React.CSSProperties = {};
-        if (r.highlight) {
-          style.backgroundColor = HIGHLIGHT_CSS[r.highlight];
-          style.color = '#000';
-        }
-        if (r.underline) style.textDecoration = 'underline';
-        // Matches Verbatim's "Emphasis" character style: a single-line border
-        // around the single most essential word/phrase, on top of underline
-        // and highlight — see CardRun.box's doc comment.
-        if (r.box) { style.border = '1.5px solid currentColor'; style.padding = '0 1px'; }
-        if (r.fontSize && r.fontSize < 11) {
-          style.fontSize = FONT_SIZE_EM[r.fontSize];
-          style.opacity = 0.6;
-        }
-        return <span key={i} style={style}>{r.text}</span>;
-      })}
+    <div className="card-page">
+      <p style={{ fontSize: '13pt', fontWeight: 700, margin: '0 0 2px' }}>
+        {parseTagRuns(card.tag).map((r, i) => (
+          <span key={i} style={r.underline ? { textDecoration: 'underline' } : undefined}>{r.text}</span>
+        ))}
+      </p>
+      <p style={{ margin: '0 0 8px' }}>
+        <span style={{ fontSize: '13pt', fontWeight: 700 }}>{citeShort}</span>{citeRest}
+      </p>
+      <FormattedBody runs={card.bodyRuns} />
     </div>
   );
 }
 
-// Thumbnails for images attached to a card.
-export function CardImages({ images, className }: { images: CardImage[]; className?: string }) {
-  if (!images?.length) return null;
+function FormattedBody({ runs }: { runs: CardRun[] }) {
   return (
-    <div className={`card-images ${className ?? ''}`}>
-      {images.map((img, i) => (
-        <img key={i} src={img.src} alt={img.alt || ''} title={img.alt || ''} className="card-image-thumb" />
-      ))}
-    </div>
+    <p style={{ margin: 0 }}>
+      {runs.map((r, i) => {
+        const style: React.CSSProperties = {};
+        if (r.highlight) style.backgroundColor = HIGHLIGHT_CSS[r.highlight];
+        if (r.underline) style.textDecoration = 'underline';
+        // Verbatim's "Emphasis" character style: a single-line border.
+        if (r.box) { style.border = '1px solid #000'; style.padding = '0 1px'; }
+        if (r.fontSize && r.fontSize < 11) style.fontSize = FONT_SIZE_EM[r.fontSize];
+        return <span key={i} style={style}>{r.text}</span>;
+      })}
+    </p>
   );
 }

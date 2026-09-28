@@ -1,28 +1,17 @@
 // Browser-side port of Warroom's electron/main.ts `ai:cutterReadSource` step 1
-// (extract cite metadata, body paragraphs, and images from a saved web page or
+// (extract cite metadata and body paragraphs from a saved web page or
 // PDF). Node's `cheerio` becomes the browser-native `DOMParser`; Node's
 // `pdf-parse` (backed by pdf.js under the hood anyway) becomes `pdfjs-dist`
 // run directly in the page.
-//
-// One real constraint from having no filesystem access: when you save a page
-// as "Webpage, Complete", the browser writes `page.html` *and* a sibling
-// `page_files/` folder holding the images referenced by relative paths. A
-// plain `<input type="file">` only ever hands you the one selected file, so
-// relative image paths can't be resolved unless the user picks the *folder*
-// instead (via `webkitdirectory`) — see `readFolderSource` below. A single
-// .html file still works fine for text; its images just won't resolve unless
-// they were already absolute/data URLs in the source markup.
 
 export interface RawSource {
   kind: 'pdf' | 'html';
   rawParagraphs: string[];
-  images: { src: string; alt: string }[];
   metaUrl: string;
   metaTitle: string;
 }
 
 const AD_SELECTOR = '[class*="ad-"],[id*="ad-"],[class*="advert"],[class*="newsletter"],[class*="related"],[class*="share"],[class*="social"],[class*="comment"],[class*="promo"],[role="navigation"]';
-const IMAGE_JUNK_RE = /logo|icon|avatar|sprite|spacer|pixel|tracking|advert|sponsor|banner|emoji|share|social|thumb-|favicon/i;
 
 function stripToRawParagraphs(main: Element, doc: Document): string[] {
   const paras: string[] = [];
@@ -44,41 +33,6 @@ function pickMain(doc: Document): Element {
   return main!;
 }
 
-// `resolveRelative` looks up a relative image path against the sibling
-// `_files` folder when the user picked a whole folder (see readFolderSource);
-// it returns null (skip the image) for a plain single-file pick.
-async function extractImages(
-  main: Element,
-  resolveRelative: ((relPath: string) => Promise<string | null>) | null,
-): Promise<{ src: string; alt: string }[]> {
-  const out: { src: string; alt: string }[] = [];
-  const seen = new Set<string>();
-  const imgs = Array.from(main.querySelectorAll('img'));
-  for (const img of imgs) {
-    if (out.length >= 24) break;
-    const src = (img.getAttribute('src') || img.getAttribute('data-src') || img.getAttribute('data-lazy-src') || '').trim();
-    const alt = (img.getAttribute('alt') || '').trim();
-    if (!src) continue;
-    const w = parseInt(img.getAttribute('width') || '0', 10);
-    const h = parseInt(img.getAttribute('height') || '0', 10);
-    const meta = `${src} ${alt} ${img.getAttribute('class') || ''} ${img.id || ''}`.toLowerCase();
-    if (IMAGE_JUNK_RE.test(meta)) continue;
-    if ((w && w < 100) || (h && h < 100)) continue;
-
-    let resolved: string | null = null;
-    if (/^https?:\/\//i.test(src)) resolved = src;
-    else if (/^data:image\//i.test(src)) { if (src.length > 256) resolved = src; }
-    else if (resolveRelative) {
-      const rel = decodeURIComponent(src.replace(/^\.?\//, '').split('?')[0].split('#')[0]);
-      resolved = await resolveRelative(rel);
-    }
-    if (!resolved || seen.has(resolved)) continue;
-    seen.add(resolved);
-    out.push({ src: resolved, alt });
-  }
-  return out;
-}
-
 function parseHtmlDoc(html: string): Document {
   const doc = new DOMParser().parseFromString(html, 'text/html');
   doc.querySelectorAll('script,style,noscript,iframe,svg,button,figcaption').forEach((el) => el.remove());
@@ -97,72 +51,60 @@ function metaFrom(doc: Document): { metaUrl: string; metaTitle: string } {
   return { metaUrl, metaTitle };
 }
 
-async function readHtmlCommon(html: string, resolveRelative: ((rel: string) => Promise<string | null>) | null): Promise<RawSource> {
+function readHtml(html: string): RawSource {
   const doc = parseHtmlDoc(html);
   const { metaUrl, metaTitle } = metaFrom(doc);
   const main = pickMain(doc);
 
-  // nav/footer/aside/form are never legitimate article content, safe to strip
-  // wherever found. <header> is only stripped when we fell back to <body>
-  // (no <article>/<main>) — many templates wrap the headline + lead photo in
-  // <article><header>...<img>...</header>, and stripping it globally would
-  // delete that image.
+  // nav/footer/aside/form are never article content. <header> is only
+  // stripped when we fell back to <body> (no <article>/<main>).
   main.querySelectorAll('nav,footer,aside,form').forEach((el) => el.remove());
   if (main === doc.body) main.querySelectorAll('header').forEach((el) => el.remove());
 
   const rawParagraphs = stripToRawParagraphs(main, doc);
-  const images = await extractImages(main, resolveRelative);
-  return { kind: 'html', rawParagraphs, images, metaUrl, metaTitle };
+  return { kind: 'html', rawParagraphs, metaUrl, metaTitle };
 }
 
 export async function readSingleFile(file: File): Promise<RawSource> {
   const ext = (file.name.toLowerCase().split('.').pop() || '');
-  if (ext === 'html' || ext === 'htm' || ext === 'xhtml' || ext === 'mhtml' || ext === 'mht') {
-    const html = await file.text();
-    return readHtmlCommon(html, null);
-  }
+  if (ext === 'mhtml' || ext === 'mht') return readHtml(htmlFromMhtml(await file.text()));
+  if (ext === 'html' || ext === 'htm' || ext === 'xhtml') return readHtml(await file.text());
   if (ext === 'pdf') {
     const rawParagraphs = await extractPdfParagraphs(file);
     if (!rawParagraphs.length) throw new Error('Could not extract text from this PDF. If it is a scanned image, it has no selectable text.');
-    return { kind: 'pdf', rawParagraphs, images: [], metaUrl: '', metaTitle: '' };
+    return { kind: 'pdf', rawParagraphs, metaUrl: '', metaTitle: '' };
   }
   throw new Error(`Unsupported file type: .${ext}. Import a saved web page (.html) or a .pdf.`);
 }
 
-// Whole-folder pick (webkitdirectory): finds the .html file plus every sibling
-// asset, so relative <img src="page_files/foo.jpg"> paths can resolve.
-export async function readFolderSource(files: FileList): Promise<RawSource> {
-  const list = Array.from(files);
-  const htmlFile = list.find((f) => /\.(html?|xhtml|mhtml?|mht)$/i.test(f.name));
-  if (!htmlFile) throw new Error('No .html file found in that folder.');
-
-  const byRelPath = new Map<string, File>();
-  for (const f of list) {
-    const rel = (f as any).webkitRelativePath || f.name;
-    // Strip the top-level folder segment so lookups match the src's own relative path.
-    const parts = rel.split('/');
-    byRelPath.set(parts.slice(1).join('/'), f);
-    byRelPath.set(parts[parts.length - 1], f); // filename-only fallback
+// An .mhtml/.mht file (Chrome's "Webpage, Single File") is a MIME multipart
+// message, not HTML — pull out its first text/html part and undo its
+// transfer encoding (quoted-printable or base64) before parsing.
+export function htmlFromMhtml(raw: string): string {
+  const boundary = raw.match(/boundary="?([^";\r\n]+)"?/i)?.[1];
+  const parts = boundary ? raw.split('--' + boundary) : [raw];
+  const part = parts.find((p) => /content-type:\s*text\/html/i.test(p));
+  if (!part) throw new Error('No HTML found inside this .mhtml file.');
+  const split = part.search(/\r?\n\r?\n/);
+  const headers = part.slice(0, split);
+  const body = part.slice(split).trim();
+  const encoding = headers.match(/content-transfer-encoding:\s*([\w-]+)/i)?.[1]?.toLowerCase();
+  if (encoding === 'base64') return decodeUtf8(Uint8Array.from(atob(body.replace(/\s+/g, '')), (c) => c.charCodeAt(0)));
+  if (encoding === 'quoted-printable') {
+    const unwrapped = body.replace(/=\r?\n/g, '');
+    const bytes: number[] = [];
+    for (let i = 0; i < unwrapped.length; i++) {
+      const hex = unwrapped[i] === '=' ? unwrapped.slice(i + 1, i + 3) : '';
+      if (/^[0-9A-Fa-f]{2}$/.test(hex)) { bytes.push(parseInt(hex, 16)); i += 2; }
+      else bytes.push(unwrapped.charCodeAt(i) & 0xff);
+    }
+    return decodeUtf8(Uint8Array.from(bytes));
   }
-
-  const resolveRelative = async (rel: string): Promise<string | null> => {
-    const match = byRelPath.get(rel) || byRelPath.get(rel.split('/').pop() || rel);
-    if (!match) return null;
-    if (match.size > 4_000_000) return null;
-    return await fileToDataUrl(match);
-  };
-
-  const html = await htmlFile.text();
-  return readHtmlCommon(html, resolveRelative);
+  return body;
 }
 
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
+function decodeUtf8(bytes: Uint8Array): string {
+  return new TextDecoder('utf-8').decode(bytes);
 }
 
 // ─── PDF text extraction (pdfjs-dist) ──────────────────────────────────────

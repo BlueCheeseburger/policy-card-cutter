@@ -140,5 +140,13 @@ console.log('\n[8] box without highlight exports the border + underline but no h
   check('no highlight', !/<w:highlight/.test(rPr), rPr);
 }
 
+console.log('\n[9] tagline _underline_ parts export underlined, the rest not');
+{
+  const xml3 = await documentXml({ ...card, tag: 'Trump _CHEATS_ everywhere' });
+  check('marked word underlined', /<w:u w:val="single"/.test(rPrBefore(xml3, 'CHEATS')));
+  check('unmarked word not underlined', !/<w:u /.test(rPrBefore(xml3, 'Trump ')));
+  check('no literal underscores left', !xml3.includes('_CHEATS_'));
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 if (fail > 0) process.exit(1);

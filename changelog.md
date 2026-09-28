@@ -7,12 +7,26 @@ in [Warroom](https://github.com/BlueCheeseburger/warroom).
 ## 2026-09-28
 
 ### Changed
+- The finished card is one read-only page — tag, cite, and body together —
+  on white with black text in every theme, instead of separate editable
+  fields. Small text stays black. Copy/download are right below it.
+- Cutter page fills the whole window.
+- Taglines can now carry underlines as well as caps (more underlines than
+  caps); underlined tag words export underlined in the .docx.
+- Prompts are no longer editable. The one editable piece is a new
+  "How to cut cites" field in Settings, prefilled with the standard rules.
 - Short cites are chosen automatically: month-day (`Brady 3-15`) for sources
   from roughly the past two months, two-digit year (`Brady 26`) otherwise.
   The Settings toggle for this was removed.
 
+### Added
+- Proper .mhtml support (decodes Chrome's single-file saved pages).
+
+### Removed
+- Images: no image extraction, no picture picker, no "saved-page folder"
+  import. Sources are text only (.html, .mhtml, .pdf).
+
 ### Fixed
-- Cut-a-card page is centered again instead of hugging the left edge.
 - Raised the AI output-token limit (Gemini's thinking tokens count
   against it), so long cuts no longer get truncated.
 
