@@ -18,7 +18,6 @@ in [Warroom](https://github.com/BlueCheeseburger/warroom).
 - Short cites are chosen automatically: month-day (`Brady 3-15`) for sources
   from roughly the past two months, two-digit year (`Brady 26`) otherwise.
   The Settings toggle for this was removed.
-
 - The AI now only chooses what to underline; everything it doesn't underline
   is shrunk to small text automatically (no separate "small" list to get wrong).
 
