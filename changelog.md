@@ -13,7 +13,7 @@ in [Warroom](https://github.com/BlueCheeseburger/warroom).
 
 ### Fixed
 - Cut-a-card page is centered again instead of hugging the left edge.
-- Raised the AI output-token limit (Gemini 2.5's thinking tokens count
+- Raised the AI output-token limit (Gemini's thinking tokens count
   against it), so long cuts no longer get truncated.
 
 ## 2026-09-14
