@@ -155,5 +155,13 @@ console.log('\n[10] paragraph breaks in the body survive as explicit <w:br/> lin
   check('two breaks between the paragraphs', (xml4.match(/<w:br\/>/g) || []).length === 2, String((xml4.match(/<w:br\/>/g) || []).length));
 }
 
+console.log('\n[11] a 6pt pilcrow run exports as sz 12 with no underline');
+{
+  const xml5 = await documentXml({ ...card, bodyRuns: [{ text: 'A.', underline: true }, { text: String.fromCharCode(0xb6), fontSize: 6 }, { text: 'B.', underline: true }] });
+  const rPr = rPrBefore(xml5, String.fromCharCode(0xb6));
+  check('6pt (sz 12)', /<w:sz w:val="12"\/>/.test(rPr), rPr);
+  check('not underlined', !/<w:u /.test(rPr), rPr);
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 if (fail > 0) process.exit(1);

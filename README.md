@@ -9,7 +9,8 @@ PDF, and cut a formatted card — no account, no sign-up, nothing to install.
    (.html or .mhtml) or PDF and it reads the cite and the real body
    paragraphs (boilerplate, nav, and newsletter prompts filtered out) — then
    decides what to underline, highlight, box, and shrink, and writes 1–2
-   taglines. The finished card shows as one page, exactly as it'll paste.
+   taglines. The finished card shows as one page, exactly as it'll paste. Paragraph condensing follows
+   CardMirror's rules (integrity, pilcrows).
 2. **Highlight density, no extra AI call.** One AI response is tiered
    (essential / standard / full); the Less/Medium/More slider re-renders
    instantly by filtering locally, instead of re-cutting the card three times.

@@ -9,6 +9,7 @@
 //
 // Run:  npx tsx scripts/test-card-format.ts
 
+import { PILCROW } from '../src/utils/condense';
 import { buildAttrsFromSpans, runsFromAttrs, runsToPlain, parseTagRuns, plainTag } from '../src/utils/cardFormat';
 
 let pass = 0, fail = 0;
@@ -158,6 +159,17 @@ console.log('\n[10] short highlights match whole words, not the front of longer 
   const t2 = 'Analysts tracked five midterms closely.';
   const a2 = buildAttrsFromSpans(t2, { underline: [t2], highlight: [{ text: 'midterm', tier: 1 }] }, 'cyan', 3);
   check('falls back to a prefix match when no whole word exists', runsFromAttrs(t2, a2).some((r) => r.highlight && r.text === 'midterm'));
+}
+
+console.log('\n[11] the pilcrow joiner is always 6pt with no underline/highlight/box, even inside an underlined cut');
+{
+  const text = 'First para ends.' + PILCROW + 'Second para begins.';
+  const attrs = buildAttrsFromSpans(text, { underline: [text], highlight: [{ text: 'ends.' + PILCROW + 'Second', tier: 1 }], box: ['ends.'] }, 'cyan', 3);
+  const runs = runsFromAttrs(text, attrs);
+  const p = runs.find((r) => r.text === PILCROW);
+  check('a run that is exactly the pilcrow exists', !!p, JSON.stringify(runs.map((r) => r.text)));
+  check('it is 6pt', p?.fontSize === 6);
+  check('it carries no underline, highlight or box', !p?.underline && !p?.highlight && !p?.box);
 }
 
 console.log(`\n${pass} passed, ${fail} failed\n`);

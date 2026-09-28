@@ -29,6 +29,9 @@ export interface Settings {
   // Seeds a new cut's color/density pickers; each cut can still change them.
   defaultHighlightColor?: HighlightColor;
   defaultHighlightLevel?: HighlightLevel;
+  // Condense — same two settings and defaults as CardMirror's (see utils/condense.ts).
+  paragraphIntegrity: boolean;
+  usePilcrows: boolean;
   // The user's own cite-cutting rules, replacing the bundled
   // skills/cite_rules.md when set. The only part of the prompts a user can edit.
   citeRules?: string;
@@ -43,6 +46,8 @@ const DEFAULT_SETTINGS: Settings = {
   lmStudioModel: '',
   defaultHighlightColor: 'cyan',
   defaultHighlightLevel: 2,
+  paragraphIntegrity: true,
+  usePilcrows: true,
 };
 
 export function readSettings(): Settings {

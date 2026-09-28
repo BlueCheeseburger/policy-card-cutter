@@ -22,6 +22,10 @@ in [Warroom](https://github.com/BlueCheeseburger/warroom).
   is shrunk to small text automatically (no separate "small" list to get wrong).
 
 ### Added
+- Condense settings matching CardMirror's: "preserve paragraph integrity"
+  (default on) and "use pilcrow markers" (default on, only used when
+  integrity is off). Whitespace cleanup always runs; merged paragraphs are
+  joined by a 6pt ¶ or a single space.
 - Proper .mhtml support (decodes Chrome's single-file saved pages).
 
 ### Removed

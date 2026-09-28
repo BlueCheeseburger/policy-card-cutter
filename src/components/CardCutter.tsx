@@ -8,6 +8,7 @@ import { openFile } from '../platform/files';
 import { readSettings } from '../platform/settings';
 import { buildAttrsFromSpans, runsFromAttrs, plainTag, HIGHLIGHT_SWATCH } from '../utils/cardFormat';
 import type { CharAttr, HighlightLevel } from '../utils/cardFormat';
+import { condenseParagraphs } from '../utils/condense';
 import { exportCardToDocx, downloadBlob } from '../utils/docxExport';
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -159,7 +160,8 @@ export default function CardCutter() {
     const idxs = includedParas.size
       ? [...includedParas].sort((a, b) => a - b)
       : source.paragraphs.map((_, i) => i);
-    return idxs.map((i) => source.paragraphs[i]).filter(Boolean).join('\n\n');
+    const s = readSettings();
+    return condenseParagraphs(idxs.map((i) => source.paragraphs[i]), { paragraphIntegrity: s.paragraphIntegrity, usePilcrows: s.usePilcrows });
   }, [includedParas, source]);
 
   async function cut() {

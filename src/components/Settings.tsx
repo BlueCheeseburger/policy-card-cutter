@@ -129,6 +129,12 @@ export default function Settings({ onClose }: { onClose: () => void }) {
             <p style={{ fontSize: 13, margin: 0 }}>The rules the AI follows when writing a card's cite. Starts with our standard rules — change them to match how your team cuts cites.</p>
             <CiteRulesEditor />
           </div>
+          <Row label="Condense: preserve paragraph integrity" hint="On: paragraphs stay separate (whitespace is still cleaned up). Off: they merge into one paragraph.">
+            <Toggle checked={s.paragraphIntegrity} onChange={(v) => update({ paragraphIntegrity: v })} />
+          </Row>
+          <Row label="Condense: use pilcrow markers" hint="Only matters when paragraph integrity is off: joins merged paragraphs with a small ¶ instead of a space.">
+            <Toggle checked={s.usePilcrows} disabled={s.paragraphIntegrity} onChange={(v) => update({ usePilcrows: v })} />
+          </Row>
           <Row label="Default highlight color" hint="Seeds the color picker for a new cut; you can still change it per card.">
             <div style={{ display: 'flex', gap: 8 }}>
               {COLORS.map((c) => (
@@ -310,6 +316,22 @@ function KeyInput({ value, onChange, placeholder, revealed }: {
       value={value}
       onChange={(e) => onChange(e.target.value)}
     />
+  );
+}
+
+function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
+  return (
+    <button
+      role="switch" aria-checked={checked} disabled={disabled}
+      onClick={() => onChange(!checked)}
+      style={{
+        width: 40, height: 22, borderRadius: 11, border: 'none', padding: 2, marginTop: 4, flexShrink: 0,
+        cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.4 : 1,
+        background: checked ? 'var(--accent)' : 'var(--bg-btn)', display: 'flex', justifyContent: checked ? 'flex-end' : 'flex-start',
+      }}
+    >
+      <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#fff', display: 'block' }} />
+    </button>
   );
 }
 

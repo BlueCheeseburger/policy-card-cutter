@@ -3,6 +3,7 @@
 // Electron/Node dependencies, so this file needed no changes to run in a browser.
 
 import type { CardRun, FontSize, HighlightColor } from '../types';
+import { PILCROW } from './condense';
 
 // Full-saturation highlight colors — same palette Verbatim/Word uses.
 export const HIGHLIGHT_CSS: Record<HighlightColor, string> = {
@@ -112,6 +113,10 @@ export function buildAttrsFromSpans(
   // Box is unconditional, like underline — it marks the single most essential
   // word/phrase within the highlight, not a fourth density level to filter.
   mark(spans.box, (a) => { a.box = true; a.u = true; a.fs = 11; });
+  // CardMirror's pilcrow joiner is always 6pt with no inherited marks.
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === PILCROW) attrs[i] = { u: false, hl: null, box: false, fs: 6 };
+  }
   return attrs;
 }
 

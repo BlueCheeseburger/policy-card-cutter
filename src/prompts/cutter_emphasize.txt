@@ -40,6 +40,8 @@ If clarifying Q&A is present above, use the user's answer to resolve the framing
 
 CRITICAL: every string in underline/highlightTier1/highlightTier2/highlightTier3/box MUST be copied verbatim from the body text below — do not paraphrase, reword, or invent text. If unsure, include less.
 
+PARAGRAPH MARKER: if the body contains a ¶ character, it is a paragraph-break marker the app inserted between merged paragraphs — never underline, highlight, or box it, and don't start or end a marked span on it; just treat it as a boundary.
+
 COVERAGE: you MUST process the ENTIRE body text from start to finish. Do not stop after the first few paragraphs. Apply emphasis throughout — the last paragraph deserves the same treatment as the first. If you run out of space, compress the JSON (no extra whitespace) so everything fits.
 
 BODY TEXT:
