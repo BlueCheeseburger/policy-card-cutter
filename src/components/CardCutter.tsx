@@ -251,7 +251,7 @@ export default function CardCutter() {
   }, [pickedImages, extraImages, source]);
 
   return (
-    <div style={{ padding: '32px 40px', maxWidth: 820 }}>
+    <div style={{ padding: '32px 40px', maxWidth: 820, margin: '0 auto' }}>
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, margin: 0 }}>Cut a card</h1>
       <p style={{ fontSize: 13, color: 'var(--ink-muted)', margin: '6px 0 28px' }}>{stepLabel(step)}</p>
 

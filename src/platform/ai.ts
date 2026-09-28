@@ -82,7 +82,7 @@ export async function cutterReadSource(fileHandle: string): Promise<CutterSource
     IMAGES: imgList,
   }, settings.promptOverrides?.cutter_read_source);
 
-  const readRaw = await callAIWithSearch(prompt, 4096);
+  const readRaw = await callAIWithSearch(prompt, 65536);
   const parsed = parseJsonLoose(readRaw);
   if (!parsed) {
     throw new Error(`Warroom AI could not read this source — its reply wasn't valid JSON. First 300 characters: ${JSON.stringify(readRaw.slice(0, 300))}`);
@@ -146,7 +146,7 @@ export async function cutterEmphasize(params: {
     REFINEMENT_NOTE: refinementNote,
   }, readSettings().promptOverrides?.cutter_emphasize);
 
-  const emphRaw = await callAI(prompt, 32768);
+  const emphRaw = await callAI(prompt, 65536);
   const parsed = parseJsonLoose(emphRaw);
   if (!parsed) throw new Error(`Warroom AI could not cut this card — its reply wasn't valid JSON. First 300 characters: ${JSON.stringify(emphRaw.slice(0, 300))}`);
   if (parsed?.question?.question && Array.isArray(parsed.question.options)) {
@@ -305,7 +305,7 @@ async function callAnthropic(apiKey: string, prompt: string, modelId: string, ma
     body: JSON.stringify({
       model: modelId,
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: maxOutputTokens,
+      max_tokens: Math.min(maxOutputTokens, 32000), // Claude 4-family models cap output at 32k–64k; 32k is safe for all
     }),
   });
   if (!res.ok) throw anthropicHttpError(res.status, await res.text().catch(() => ''));

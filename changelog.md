@@ -11,6 +11,11 @@ in [Warroom](https://github.com/BlueCheeseburger/warroom).
   from roughly the past two months, two-digit year (`Brady 26`) otherwise.
   The Settings toggle for this was removed.
 
+### Fixed
+- Cut-a-card page is centered again instead of hugging the left edge.
+- Raised the AI output-token limit (Gemini 2.5's thinking tokens count
+  against it), so long cuts no longer get truncated.
+
 ## 2026-09-14
 
 ### Added
