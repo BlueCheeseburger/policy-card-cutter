@@ -4,6 +4,13 @@ All notable changes to this fork are recorded here. Dates are when the change
 landed in this repo, not necessarily when the underlying feature first shipped
 in [Warroom](https://github.com/BlueCheeseburger/warroom).
 
+## 2026-09-28
+
+### Changed
+- Short cites are chosen automatically: month-day (`Brady 3-15`) for sources
+  from roughly the past two months, two-digit year (`Brady 26`) otherwise.
+  The Settings toggle for this was removed.
+
 ## 2026-09-14
 
 ### Added

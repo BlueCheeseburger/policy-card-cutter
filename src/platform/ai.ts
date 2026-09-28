@@ -212,11 +212,7 @@ export function resetPromptOverride(name: PromptName): void {
 }
 
 function citeYearRuleText(): string {
-  const fmt = readSettings().citeYearFormat ?? 'month-day';
-  if (fmt === 'year') {
-    return 'Current-year sources use a two-digit year short cite (e.g. "Brady 26"), same as past years — do NOT use a month-day short cite even for current-year sources.';
-  }
-  return 'Current-year sources use a month-day short cite (e.g. "Brady 3-15"); past years use a two-digit year.';
+  return 'Sources dated within roughly the past two months (relative to today) use a month-day short cite (e.g. "Brady 3-15"), with the full year in the body of the cite; anything older uses a two-digit year (e.g. "Brady 26").';
 }
 
 // ─── Provider-calling engine (no Warroom equivalent — see file header) ─────

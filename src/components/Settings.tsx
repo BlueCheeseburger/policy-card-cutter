@@ -131,13 +131,6 @@ export default function Settings({ onClose }: { onClose: () => void }) {
         </Section>
 
         <Section title="Card cutting">
-          <Row label="Current-year short cite">
-            <Segmented
-              value={s.citeYearFormat ?? 'month-day'}
-              onChange={(v) => update({ citeYearFormat: v as 'month-day' | 'year' })}
-              options={[{ value: 'month-day', label: 'Brady 3-15' }, { value: 'year', label: 'Brady 26' }]}
-            />
-          </Row>
           <Row label="Default highlight color" hint="Seeds the color picker for a new cut; you can still change it per card.">
             <div style={{ display: 'flex', gap: 8 }}>
               {COLORS.map((c) => (

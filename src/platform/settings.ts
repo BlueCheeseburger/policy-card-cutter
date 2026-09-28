@@ -30,8 +30,6 @@ export interface Settings {
   // Optional aux Gemini key used only for Google Search grounding (author
   // credential lookups) when the main provider isn't Gemini.
   auxGeminiKey?: string;
-  // Current-year short-cite style: "Brady 3-15" (month-day) vs "Brady 26" (year).
-  citeYearFormat?: 'month-day' | 'year';
   // Seeds a new cut's color/density pickers; each cut can still change them.
   defaultHighlightColor?: HighlightColor;
   defaultHighlightLevel?: HighlightLevel;
