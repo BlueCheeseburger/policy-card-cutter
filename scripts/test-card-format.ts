@@ -23,7 +23,6 @@ console.log('\n[1] runsFromAttrs never changes the underlying text');
   const attrs = buildAttrsFromSpans(text, {
     underline: ['quick brown fox jumps'],
     highlight: [{ text: 'quick brown', tier: 1 }, { text: 'jumps', tier: 2 }],
-    small: ['in the administrative building'],
   }, 'yellow', 3);
   const runs = runsFromAttrs(text, attrs);
   check('joined runs equal the original text exactly', runsToPlain(runs) === text, runsToPlain(runs));
@@ -66,7 +65,6 @@ console.log('\n[4] highlight density tiers filter independently, without re-runn
       { text: 'real impact', tier: 2 as const },
       { text: 'argumentation quality', tier: 3 as const },
     ],
-    small: [],
   };
   const counts = [1, 2, 3].map((level) => {
     const attrs = buildAttrsFromSpans(text, spans, 'cyan', level as 1 | 2 | 3);
@@ -78,21 +76,22 @@ console.log('\n[4] highlight density tiers filter independently, without re-runn
   check('density levels are monotonically non-decreasing', counts[0] <= counts[1] && counts[1] <= counts[2]);
 }
 
-console.log('\n[5] small text and underline/highlight can coexist without one erasing the other');
+console.log('\n[5] everything the AI did not underline is shrunk to small text automatically');
 {
   const text = 'Kept for context, but the core claim is what gets read aloud.';
   const attrs = buildAttrsFromSpans(text, {
     underline: ['the core claim is what gets read aloud'],
     highlight: [{ text: 'core claim', tier: 1 }],
-    small: ['Kept for context, but'],
   }, 'green', 3);
   const runs = runsFromAttrs(text, attrs);
   const smallRun = runs.find((r) => r.fontSize === 8);
-  const underlinedRun = runs.find((r) => r.underline && !r.highlight);
-  const highlightedRun = runs.find((r) => r.highlight);
-  check('a small run exists', !!smallRun);
-  check('a plain underlined run exists', !!underlinedRun);
-  check('a highlighted run exists', !!highlightedRun);
+  check('the un-underlined lead-in is small', smallRun?.text === 'Kept for context, but ', smallRun?.text);
+  check('small text is not underlined or highlighted', !smallRun?.underline && !smallRun?.highlight);
+  check('underlined text is full size', runs.filter((r) => r.underline).every((r) => r.fontSize === undefined));
+  check('a plain underlined run exists', runs.some((r) => r.underline && !r.highlight));
+  check('a highlighted run exists', runs.some((r) => r.highlight));
+  const none = runsFromAttrs(text, buildAttrsFromSpans(text, {}, 'green', 3));
+  check('with no underline at all, the whole body is small', none.length === 1 && none[0].fontSize === 8);
 }
 
 console.log('\n[6] box is unconditional (like underline), independent of the highlight-density level');

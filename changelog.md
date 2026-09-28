@@ -19,6 +19,9 @@ in [Warroom](https://github.com/BlueCheeseburger/warroom).
   from roughly the past two months, two-digit year (`Brady 26`) otherwise.
   The Settings toggle for this was removed.
 
+- The AI now only chooses what to underline; everything it doesn't underline
+  is shrunk to small text automatically (no separate "small" list to get wrong).
+
 ### Added
 - Proper .mhtml support (decodes Chrome's single-file saved pages).
 

@@ -1,4 +1,4 @@
-// Shared helpers for formatted card bodies (underline / highlight / small text).
+// Shared helpers for formatted card bodies (underline / highlight / box; everything else small).
 // Ported near-verbatim from Warroom's src/utils/cardFormat.ts — pure TS, no
 // Electron/Node dependencies, so this file needed no changes to run in a browser.
 
@@ -34,7 +34,7 @@ export interface CharAttr {
 }
 
 export function emptyAttrs(len: number): CharAttr[] {
-  return Array.from({ length: len }, () => ({ u: false, hl: null, box: false, fs: 11 as FontSize }));
+  return Array.from({ length: len }, () => ({ u: false, hl: null, box: false, fs: 8 as FontSize }));
 }
 
 // A match starting mid-word (e.g. "in" landing inside "administrative") is never
@@ -91,7 +91,7 @@ export type HighlightLevel = 1 | 2 | 3;
 // Apply AI-returned emphasis substrings onto the verbatim body, producing runs.
 export function buildAttrsFromSpans(
   text: string,
-  spans: { underline?: string[]; highlight?: { text: string; tier: HighlightLevel }[]; box?: string[]; small?: string[] },
+  spans: { underline?: string[]; highlight?: { text: string; tier: HighlightLevel }[]; box?: string[] },
   color: HighlightColor,
   highlightLevel: HighlightLevel = 3,
 ): CharAttr[] {
@@ -103,8 +103,9 @@ export function buildAttrsFromSpans(
       }
     }
   };
-  // small first, then underline/highlight (emphasis wins over shrunk context).
-  mark(spans.small, (a) => { a.fs = 8; });
+  // The AI only chooses what to underline; everything it didn't choose is
+  // shrunk to small text, and underline/highlight/box restore full size.
+  for (const a of attrs) a.fs = 8;
   mark(spans.underline, (a) => { a.u = true; a.fs = 11; });
   const highlightAtLevel = (spans.highlight ?? []).filter((h) => h.tier <= highlightLevel).map((h) => h.text);
   mark(highlightAtLevel, (a) => { a.hl = color; a.u = true; a.fs = 11; });
@@ -118,7 +119,7 @@ export function runsFromAttrs(text: string, attrs: CharAttr[]): CardRun[] {
   const runs: CardRun[] = [];
   let cur: (CardRun & { _key: string }) | null = null;
   for (let i = 0; i < text.length; i++) {
-    const a = attrs[i] ?? { u: false, hl: null, box: false, fs: 11 as FontSize };
+    const a = attrs[i] ?? { u: false, hl: null, box: false, fs: 8 as FontSize };
     const key = `${a.u}|${a.hl ?? ''}|${a.box}|${a.fs}`;
     if (cur && cur._key === key) {
       cur.text += text[i];

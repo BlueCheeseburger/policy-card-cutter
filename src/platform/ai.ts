@@ -101,7 +101,7 @@ export async function cutterEmphasize(params: {
   cite?: string;
   clarifications?: AIClarification[];
   refineInstruction?: string;
-  previous?: { underline?: string[]; highlight?: HighlightSpan[]; box?: string[]; small?: string[] };
+  previous?: { underline?: string[]; highlight?: HighlightSpan[]; box?: string[] };
 }): Promise<CutterEmphasis> {
   const text = String(params.body ?? '').trim();
   if (!text) throw new Error('No card body text to cut.');
@@ -116,7 +116,6 @@ export async function cutterEmphasize(params: {
         highlightTier2: (params.previous?.highlight ?? []).filter((h) => h.tier === 2).map((h) => h.text),
         highlightTier3: (params.previous?.highlight ?? []).filter((h) => h.tier === 3).map((h) => h.text),
         box: params.previous?.box ?? [],
-        small: params.previous?.small ?? [],
       })}\n` +
       `The debater wants this changed: "${refine}"\n` +
       `Apply that change and return a COMPLETE new emphasis set in the same format — not just the parts that changed. Keep everything they did not ask you to change. Do NOT ask a clarifying question on a refinement pass; make your best call.\n`
@@ -136,7 +135,7 @@ export async function cutterEmphasize(params: {
   const parsed = parseJsonLoose(emphRaw);
   if (!parsed) throw new Error(`Warroom AI could not cut this card — its reply wasn't valid JSON. First 300 characters: ${JSON.stringify(emphRaw.slice(0, 300))}`);
   if (parsed?.question?.question && Array.isArray(parsed.question.options)) {
-    return { ok: true, question: parsed.question, taglines: [], underline: [], highlight: [], box: [], small: [] };
+    return { ok: true, question: parsed.question, taglines: [], underline: [], highlight: [], box: [] };
   }
 
   const arr = (v: any): string[] => Array.isArray(v) ? v.filter((s: any) => typeof s === 'string' && s.trim()).map((s: string) => s.trim()) : [];
@@ -162,7 +161,7 @@ export async function cutterEmphasize(params: {
     throw new Error('Warroom AI returned no highlighting for this card. Try cutting it again.');
   }
   if (taglines.length === 0) taglines = ['Untitled card'];
-  return { ok: true, taglines, underline: arr(parsed.underline), highlight, box: arr(parsed.box), small: arr(parsed.small) };
+  return { ok: true, taglines, underline: arr(parsed.underline), highlight, box: arr(parsed.box) };
 }
 
 // ─── Provider-calling engine (no Warroom equivalent — see file header) ─────

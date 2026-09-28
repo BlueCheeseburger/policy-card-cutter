@@ -1,6 +1,6 @@
 // Core types for a cut debate card — ported from Warroom's src/types.ts.
 // A card body is a string of verbatim source text; CardRun[] layers debate
-// emphasis (underline/highlight/box/small) on top without ever changing the text.
+// emphasis (underline/highlight/box; everything not underlined is small) on top without ever changing the text.
 
 export type HighlightColor = 'yellow' | 'cyan' | 'green';
 
@@ -64,7 +64,6 @@ export interface CutterEmphasis {
   // Key words/phrases/numbers that get a bordered box (always underlined too);
   // may or may not also be highlighted. See CardRun.box.
   box: string[];
-  small: string[];
 }
 
 export interface AIQuestion {
