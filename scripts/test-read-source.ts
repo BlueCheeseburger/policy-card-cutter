@@ -4,7 +4,7 @@
 //
 // Run:  npx tsx scripts/test-read-source.ts
 
-import { htmlFromMhtml } from '../src/utils/readSource';
+import { htmlFromMhtml, paragraphsFromPdfItems, isJunkNames } from '../src/utils/readSource';
 
 let pass = 0, fail = 0;
 function check(name: string, cond: boolean, extra = '') {
@@ -45,6 +45,31 @@ console.log('\n[2] base64 HTML part is decoded');
   const b64 = btoa('<p>Hello base64</p>');
   const raw = `Content-Type: multipart/related; boundary="B"\r\n\r\n--B\r\nContent-Type: text/html\r\nContent-Transfer-Encoding: base64\r\n\r\n${b64}\r\n--B--`;
   check('decoded', htmlFromMhtml(raw).includes('Hello base64'));
+}
+
+console.log('\n[3] junk detection matches whole words, never substrings');
+{
+  for (const real of ['lead-paragraph', 'thread-body', 'read-view', 'commentary', 'broadcast-story', 'head-title', 'gradient-box']) {
+    check(`keeps "${real}"`, !isJunkNames(real, ''), real);
+  }
+  for (const junk of ['ad-slot', 'top_ad', 'social-share', 'related-articles', 'newsletter-signup', 'comments', 'promo']) {
+    check(`removes "${junk}"`, isJunkNames(junk, ''), junk);
+  }
+  check('matches on id too', isJunkNames('', 'ad-banner'));
+}
+
+console.log('\n[4] PDF lines split into paragraphs on bigger-than-normal vertical gaps');
+{
+  const items = [
+    { text: 'Para one line one', y: 700 }, { text: 'continues here', y: 700 },
+    { text: 'para one line two', y: 686 }, { text: 'para one line three', y: 672 },
+    { text: 'Para two starts', y: 632 }, { text: 'and ends', y: 618 },
+  ];
+  const paras = paragraphsFromPdfItems(items);
+  check('two paragraphs', paras.length === 2, JSON.stringify(paras));
+  check('same-baseline fragments joined into one line', paras[0]?.startsWith('Para one line one continues here'), paras[0]);
+  check('empty input gives none', paragraphsFromPdfItems([]).length === 0);
+  check('single block stays one paragraph', paragraphsFromPdfItems([{ text: 'a', y: 100 }, { text: 'b', y: 86 }, { text: 'c', y: 72 }]).length === 1);
 }
 
 console.log(`\n${pass} passed, ${fail} failed\n`);

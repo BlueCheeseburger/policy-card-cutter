@@ -148,5 +148,12 @@ console.log('\n[9] tagline _underline_ parts export underlined, the rest not');
   check('no literal underscores left', !xml3.includes('_CHEATS_'));
 }
 
+console.log('\n[10] paragraph breaks in the body survive as explicit <w:br/> line breaks');
+{
+  const xml4 = await documentXml({ ...card, bodyRuns: [{ text: 'Para one.\n\nPara two.', underline: true }] });
+  check('no raw newline left inside a run', !/<w:t[^>]*>[^<]*\n[^<]*<\/w:t>/.test(xml4));
+  check('two breaks between the paragraphs', (xml4.match(/<w:br\/>/g) || []).length === 2, String((xml4.match(/<w:br\/>/g) || []).length));
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 if (fail > 0) process.exit(1);

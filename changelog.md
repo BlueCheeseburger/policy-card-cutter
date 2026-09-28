@@ -27,6 +27,17 @@ in [Warroom](https://github.com/BlueCheeseburger/warroom).
   import. Sources are text only (.html, .mhtml, .pdf).
 
 ### Fixed
+- Source reader no longer deletes real article text: blocks whose class name
+  merely contained "ad-", "comment", etc. (`lead-paragraph`, `thread-body`,
+  `commentary`) were dropped, a junk-looking `<body>` class crashed it, and
+  text inside blockquotes/lists came out twice.
+- PDFs are split into real paragraphs by line spacing instead of one giant
+  paragraph per page, so paragraph picking works on them.
+- A short highlight like "in" no longer lights up the start of "inflationary".
+- Paragraph breaks now survive into the `.docx` (Word was collapsing them).
+- Cite rules containing `$` are inserted literally; a blank cite-rules field
+  falls back to the standard rules instead of sending none.
+- Clearer errors for a truncated response and for a network failure.
 - Raised the AI output-token limit (Gemini's thinking tokens count
   against it), so long cuts no longer get truncated.
 

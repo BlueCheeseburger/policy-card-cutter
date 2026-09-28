@@ -150,5 +150,16 @@ console.log('\n[9] tagline _underline_ markers parse into runs, caps untouched')
   check('lone underscore kept as text', plainTag('snake_case tag') === 'snake_case tag');
 }
 
+console.log('\n[10] short highlights match whole words, not the front of longer ones');
+{
+  const text = 'Inflation rises in the inflationary period, and investors in Indiana react.';
+  const attrs = buildAttrsFromSpans(text, { underline: [text], highlight: [{ text: 'in', tier: 1 }] }, 'cyan', 3);
+  const hit = runsFromAttrs(text, attrs).filter((r) => r.highlight).map((r) => r.text);
+  check('only the two standalone "in" words', hit.length === 2 && hit.every((t) => t === 'in'), JSON.stringify(hit));
+  const t2 = 'Analysts tracked five midterms closely.';
+  const a2 = buildAttrsFromSpans(t2, { underline: [t2], highlight: [{ text: 'midterm', tier: 1 }] }, 'cyan', 3);
+  check('falls back to a prefix match when no whole word exists', runsFromAttrs(t2, a2).some((r) => r.highlight && r.text === 'midterm'));
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 if (fail > 0) process.exit(1);

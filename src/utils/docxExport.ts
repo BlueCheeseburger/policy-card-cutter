@@ -59,15 +59,18 @@ export async function exportCardToDocx(card: Card): Promise<Blob> {
     ...(citeRest ? [new TextRun({ text: citeRest, font: FONT, color: BLACK, size: 22 })] : []),
   ];
 
-  const bodyRuns = card.bodyRuns.map((r) => new TextRun({
-    text: r.text,
+  // Word treats a raw "\n" inside a run as a space, so paragraph breaks in the
+  // body (the on-screen card shows them) become explicit line breaks.
+  const bodyRuns = card.bodyRuns.flatMap((r) => r.text.split('\n').map((piece, i) => new TextRun({
+    text: piece,
+    break: i > 0 ? 1 : undefined,
     font: FONT,
     color: BLACK,
     underline: r.underline ? {} : undefined,
     highlight: r.highlight ? HIGHLIGHT_TO_DOCX[r.highlight] : undefined,
     border: r.box ? BOX_BORDER : undefined,
     size: (r.fontSize ?? 11) * 2, // half-points; 11pt body default
-  }));
+  })));
 
   const doc = new Document({
     sections: [{

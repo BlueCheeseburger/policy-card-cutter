@@ -31,11 +31,12 @@ import { renderPrompt, capForPrompt } from '../utils/prompt';
 export const BUNDLED_CITE_RULES = citeRulesBundled;
 
 export function currentCiteRules(): string {
-  return readSettings().citeRules ?? citeRulesBundled;
+  const custom = readSettings().citeRules;
+  return custom && custom.trim() ? custom : citeRulesBundled;
 }
 
 function currentSkillText(): string {
-  return cardCuttingSkill.replace('{{CITE_RULES}}', currentCiteRules());
+  return cardCuttingSkill.replace('{{CITE_RULES}}', () => currentCiteRules());
 }
 
 // ─── The two feature contracts CardCutter.tsx calls ────────────────────────
@@ -349,7 +350,7 @@ export function humanizeAiError(raw: string | undefined | null): string {
   if (msg.includes('api_key_invalid') || msg.includes('invalid api key') || msg.includes('api key not valid') || msg.includes('rejected the api key') || msg.includes('rejected the request'))
     return `Your ${name} API key isn't working. Double-check it in Settings.`;
   if (msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('cors'))
-    return `Couldn't reach ${name} from the browser — this may be a CORS restriction.`;
+    return `Couldn't reach ${name}. Check your internet connection (and any ad blocker or VPN), then try again.`;
   if (msg.includes('permission_denied') || msg.includes('403') || msg.includes('unauthorized') || msg.includes('401'))
     return `${name} rejected the request — your API key may not have access to this model.`;
   if (msg.includes('safety') || msg.includes('blocked') || msg.includes('harm'))
@@ -357,7 +358,7 @@ export function humanizeAiError(raw: string | undefined | null): string {
   if (msg.includes('overload') || msg.includes('unavailable') || msg.includes('503'))
     return `${name} is overloaded right now. Try again in a few seconds.`;
   if (msg.startsWith('truncated:'))
-    return `${name} cut the response off — it was too large to answer in one call. Try selecting less text.`;
+    return `${name} cut the response off — it was too large to answer in one call. Try selecting fewer paragraphs, or cut again.`;
   if (raw && raw.length > 0 && raw.length < 160) return raw;
   return `Something went wrong with ${name}. Try again.`;
 }

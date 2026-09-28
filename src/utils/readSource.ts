@@ -11,11 +11,26 @@ export interface RawSource {
   metaTitle: string;
 }
 
-const AD_SELECTOR = '[class*="ad-"],[id*="ad-"],[class*="advert"],[class*="newsletter"],[class*="related"],[class*="share"],[class*="social"],[class*="comment"],[class*="promo"],[role="navigation"]';
+// Junk is matched on whole class/id *words* (split on - and _), never
+// substrings: `[class*="ad-"]` also hit "lead-paragraph", "thread-body" and
+// "read-view", and `[class*="comment"]` hit "commentary", silently deleting
+// real article text.
+const JUNK_WORDS = new Set(['ad', 'ads', 'advert', 'advertisement', 'advertising', 'newsletter', 'related', 'share', 'sharing', 'social', 'comment', 'comments', 'promo', 'promotion', 'sponsored']);
+const PARA_SELECTOR = 'p,li,blockquote,h2,h3';
+
+export function isJunkNames(className: string, id: string): boolean {
+  return `${className} ${id}`.toLowerCase().split(/[\s_-]+/).some((w) => JUNK_WORDS.has(w));
+}
+
+function isJunk(el: Element): boolean {
+  return el.getAttribute('role') === 'navigation' || isJunkNames(el.getAttribute('class') ?? '', el.id ?? '');
+}
 
 function stripToRawParagraphs(main: Element, doc: Document): string[] {
   const paras: string[] = [];
-  main.querySelectorAll('p,li,blockquote,h2,h3').forEach((el) => {
+  main.querySelectorAll(PARA_SELECTOR).forEach((el) => {
+    // A blockquote/li that wraps its own <p> would repeat that text — take the inner blocks instead.
+    if (el.querySelector(PARA_SELECTOR)) return;
     const t = (el.textContent ?? '').replace(/\s+/g, ' ').trim();
     if (t && t.split(' ').length >= 3) paras.push(t);
   });
@@ -36,7 +51,6 @@ function pickMain(doc: Document): Element {
 function parseHtmlDoc(html: string): Document {
   const doc = new DOMParser().parseFromString(html, 'text/html');
   doc.querySelectorAll('script,style,noscript,iframe,svg,button,figcaption').forEach((el) => el.remove());
-  doc.querySelectorAll(AD_SELECTOR).forEach((el) => el.remove());
   return doc;
 }
 
@@ -59,6 +73,9 @@ function readHtml(html: string): RawSource {
   // nav/footer/aside/form are never article content. <header> is only
   // stripped when we fell back to <body> (no <article>/<main>).
   main.querySelectorAll('nav,footer,aside,form').forEach((el) => el.remove());
+  // Only strip junk *inside* the chosen main — never main itself or its ancestors,
+  // so a wrapper class like "social-page" can't delete the whole article.
+  Array.from(main.querySelectorAll('*')).filter(isJunk).forEach((el) => el.remove());
   if (main === doc.body) main.querySelectorAll('header').forEach((el) => el.remove());
 
   const rawParagraphs = stripToRawParagraphs(main, doc);
@@ -116,20 +133,39 @@ async function extractPdfParagraphs(file: File): Promise<string[]> {
 
   const buf = await file.arrayBuffer();
   const doc = await pdfjsLib.getDocument({ data: buf }).promise;
-  const pageTexts: string[] = [];
+  const paragraphs: string[] = [];
   for (let i = 1; i <= doc.numPages; i++) {
     const page = await doc.getPage(i);
     const content = await page.getTextContent();
-    // pdf.js gives us positioned text items, not paragraphs — join a page's
-    // items with spaces (close enough for the AI's body-paragraph pass), and
-    // separate pages with a blank line so the paragraph-splitting below still
-    // treats each page boundary as a break, mirroring pdf-parse's plain output.
-    const text = content.items.map((it: any) => ('str' in it ? it.str : '')).join(' ');
-    pageTexts.push(text);
+    const items = content.items
+      .filter((it: any) => 'str' in it && it.str.trim())
+      .map((it: any) => ({ text: it.str as string, y: it.transform[5] as number }));
+    paragraphs.push(...paragraphsFromPdfItems(items));
   }
-  const fullText = pageTexts.join('\n\n').trim();
-  if (!fullText) return [];
-  let paragraphs = fullText.split(/\n{2,}/).map((s) => s.replace(/[ \t]+/g, ' ').trim()).filter(Boolean);
-  if (paragraphs.length < 3) paragraphs = fullText.split(/\n/).map((s) => s.trim()).filter(Boolean);
   return paragraphs;
+}
+
+// pdf.js hands back positioned text fragments, not paragraphs. Group
+// fragments into lines by baseline (y), then start a new paragraph wherever
+// the vertical gap to the previous line is clearly bigger than the page's
+// normal line spacing (or the text jumps back up, e.g. a new column). A page
+// boundary is always a break. Pure, so it's tested without a real PDF.
+export function paragraphsFromPdfItems(items: { text: string; y: number }[]): string[] {
+  const lines: { y: number; text: string }[] = [];
+  for (const it of items) {
+    const last = lines[lines.length - 1];
+    if (last && Math.abs(last.y - it.y) <= 2) last.text += ' ' + it.text;
+    else lines.push({ y: it.y, text: it.text });
+  }
+  const gaps = lines.slice(1).map((l, i) => lines[i].y - l.y).filter((g) => g > 0).sort((a, b) => a - b);
+  const normal = gaps.length ? gaps[Math.floor(gaps.length / 2)] : 0;
+  const out: string[] = [];
+  let cur = '';
+  lines.forEach((l, i) => {
+    const gap = i ? lines[i - 1].y - l.y : 0;
+    if (cur && (gap < 0 || (normal && gap > normal * 1.5))) { out.push(cur); cur = ''; }
+    cur += (cur ? ' ' : '') + l.text;
+  });
+  if (cur) out.push(cur);
+  return out.map((t) => t.replace(/\s+/g, ' ').trim()).filter(Boolean);
 }

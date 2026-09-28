@@ -197,8 +197,11 @@ function CiteRulesEditor() {
           disabled={!dirty}
           title={dirty ? undefined : 'No changes to save'}
           onClick={() => {
-            writeSettings({ citeRules: draft === BUNDLED_CITE_RULES ? undefined : draft });
-            setSaved(draft);
+            // A blank field means "use the standard rules", never "no rules".
+            const next = draft.trim() ? draft : BUNDLED_CITE_RULES;
+            writeSettings({ citeRules: next === BUNDLED_CITE_RULES ? undefined : next });
+            setSaved(next);
+            setDraft(next);
           }}
         >
           Save

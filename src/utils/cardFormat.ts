@@ -45,18 +45,30 @@ function isWordStart(text: string, idx: number): boolean {
   return !/[A-Za-z0-9']/.test(text[idx - 1]);
 }
 
-// Find every range of `sub` within `text`. Exact match first, then a
-// whitespace-flexible match so minor whitespace drift from the model still lands.
+// The mirror of isWordStart: a match should also stop at a word boundary, so
+// "in" doesn't light up the front of "inflationary".
+function isWordEnd(text: string, end: number): boolean {
+  if (end >= text.length) return true;
+  if (!/[A-Za-z0-9']/.test(text[end - 1])) return true;
+  return !/[A-Za-z0-9']/.test(text[end]);
+}
+
+// Find every range of `sub` within `text`. Whole-word matches win; only if the
+// substring never appears as a whole word do we accept one that runs into the
+// end of a longer word (e.g. the model returned "midterm" for "midterms").
+// Then a whitespace-flexible match so minor whitespace drift still lands.
 function findRanges(text: string, sub: string): [number, number][] {
   const ranges: [number, number][] = [];
   const s = sub.trim();
   if (!s) return ranges;
+  const loose: [number, number][] = [];
   let idx = text.indexOf(s);
   while (idx !== -1) {
-    if (isWordStart(text, idx)) ranges.push([idx, idx + s.length]);
+    if (isWordStart(text, idx)) (isWordEnd(text, idx + s.length) ? ranges : loose).push([idx, idx + s.length]);
     idx = text.indexOf(s, idx + s.length);
   }
   if (ranges.length) return ranges;
+  if (loose.length) return loose;
   const pattern = s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
   try {
     const re = new RegExp(pattern, 'g');
