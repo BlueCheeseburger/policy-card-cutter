@@ -121,7 +121,7 @@ console.log('\n[7] box/emphasis run: underline + highlight + the real single-lin
   check('border size 8 (matches w:sz="8" in the real style)', /w:sz="8"/.test(rPr), rPr);
   check('border space 0', /w:space="0"/.test(rPr), rPr);
   check('border color auto', /w:color="auto"/.test(rPr), rPr);
-  check('not bold (Emphasis style sets b="0")', !/<w:b\/>/.test(rPr), rPr);
+  check('bold (rule: anything boxed is bolded)', /<w:b\/>/.test(rPr), rPr);
 }
 {
   const rPr = rPrBefore(xml, 'bleak');

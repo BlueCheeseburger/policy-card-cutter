@@ -16,7 +16,9 @@
 // - Highlight: underline + highlight color, no border — same as underline
 //   above but with `w:highlight` added.
 // - Box/emphasis (the real "Emphasis" style): underline + highlight + a
-//   single-line auto-color border (`w:bdr`), not bold, not italic.
+//   single-line auto-color border (`w:bdr`), not italic. The sample cards'
+//   Emphasis style sets bold off, but the user's rule is "anything boxed is
+//   bolded", so boxed runs are also bold here.
 // - Every run gets explicit black color (`000000`) — the template does this
 //   on every single run, not just the ones that might otherwise inherit a
 //   theme color.
@@ -66,6 +68,7 @@ export async function exportCardToDocx(card: Card): Promise<Blob> {
     break: i > 0 ? 1 : undefined,
     font: FONT,
     color: BLACK,
+    bold: r.box ? true : undefined,
     underline: r.underline ? {} : undefined,
     highlight: r.highlight ? HIGHLIGHT_TO_DOCX[r.highlight] : undefined,
     border: r.box ? BOX_BORDER : undefined,

@@ -30,6 +30,7 @@ in [Warroom](https://github.com/BlueCheeseburger/warroom).
   layouts — Paragraphs kept (its Uncondense), Condensed, Condensed with ¶, and
   Condensed with warning (PARAGRAPH INTEGRITY PAUSES/RESUMES lines, with its
   marker-delimiter setting: [ [[ < << { {{ or custom). No new AI call.
+- Boxed text is now bold too, on screen and in the .docx.
 - Proper .mhtml support (decodes Chrome's single-file saved pages).
 
 ### Removed

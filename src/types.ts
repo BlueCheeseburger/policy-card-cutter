@@ -20,7 +20,7 @@ export interface CardRun {
   // "Emphasis" character style (underline + a `w:bdr` border), confirmed
   // against actual cut cards' XML. Independent of highlight: it may sit on a
   // highlighted word or on underlined-but-unhighlighted text, but is always
-  // underlined. Always shown regardless of the highlight-density slider,
+  // underlined, and always bold too. Always shown regardless of the highlight-density slider,
   // same as underline — not an extra density tier.
   box?: boolean;
   fontSize?: FontSize;          // omit/11 = normal; 8/6/3 = shrunk context NOT read aloud

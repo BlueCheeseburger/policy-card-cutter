@@ -31,8 +31,9 @@ function FormattedBody({ runs }: { runs: CardRun[] }) {
         const style: React.CSSProperties = {};
         if (r.highlight) style.backgroundColor = HIGHLIGHT_CSS[r.highlight];
         if (r.underline) style.textDecoration = 'underline';
-        // Verbatim's "Emphasis" character style: a single-line border.
-        if (r.box) { style.border = '1px solid #000'; style.padding = '0 1px'; }
+        // Verbatim's "Emphasis" character style: a single-line border. Boxed
+        // text is also bold.
+        if (r.box) { style.border = '1px solid #000'; style.padding = '0 1px'; style.fontWeight = 700; }
         if (r.fontSize && r.fontSize < 11) style.fontSize = FONT_SIZE_EM[r.fontSize];
         return <span key={i} style={style}>{r.text}</span>;
       })}
