@@ -172,5 +172,16 @@ console.log('\n[11] the pilcrow joiner is always 6pt with no underline/highlight
   check('it carries no underline, highlight or box', !p?.underline && !p?.highlight && !p?.box);
 }
 
+console.log('\n[12] switching condense mode re-finds a span that crossed a paragraph joint, and marker lines stay full size');
+{
+  const spans = { underline: ['end. Start here'], highlight: [{ text: 'Start', tier: 1 as const }], plain: ['[NOTE]'] };
+  const text = '[NOTE]\n\nlong lead-in sentence end.' + PILCROW + 'Start here and more trailing words.';
+  const runs = runsFromAttrs(text, buildAttrsFromSpans(text, spans, 'cyan', 3));
+  check('the span still lands on both sides of the pilcrow', runs.some((r) => r.underline && r.text === 'end.') && runs.some((r) => r.underline && r.text.startsWith('Start')), JSON.stringify(runs));
+  check('the pilcrow itself stays unmarked 6pt', runs.some((r) => r.text === PILCROW && r.fontSize === 6 && !r.underline));
+  const note = runs.find((r) => r.text.includes('[NOTE]'));
+  check('marker line is full size and unmarked', !!note && note.fontSize === undefined && !note.underline);
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 if (fail > 0) process.exit(1);

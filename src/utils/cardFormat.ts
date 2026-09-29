@@ -70,7 +70,9 @@ function findRanges(text: string, sub: string): [number, number][] {
   }
   if (ranges.length) return ranges;
   if (loose.length) return loose;
-  const pattern = s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+  // Whitespace and the pilcrow joiner are interchangeable, so a span found in
+  // one condense mode still lands after switching to another.
+  const pattern = s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/[\s\u00B6]+/g, '[\\s\\u00B6]+');
   try {
     const re = new RegExp(pattern, 'g');
     let m: RegExpExecArray | null;
@@ -92,7 +94,7 @@ export type HighlightLevel = 1 | 2 | 3;
 // Apply AI-returned emphasis substrings onto the verbatim body, producing runs.
 export function buildAttrsFromSpans(
   text: string,
-  spans: { underline?: string[]; highlight?: { text: string; tier: HighlightLevel }[]; box?: string[] },
+  spans: { underline?: string[]; highlight?: { text: string; tier: HighlightLevel }[]; box?: string[]; plain?: string[] },
   color: HighlightColor,
   highlightLevel: HighlightLevel = 3,
 ): CharAttr[] {
@@ -113,6 +115,10 @@ export function buildAttrsFromSpans(
   // Box is unconditional, like underline — it marks the single most essential
   // word/phrase within the highlight, not a fourth density level to filter.
   mark(spans.box, (a) => { a.box = true; a.u = true; a.fs = 11; });
+  // Warning-marker lines are notes to the reader: full size, nothing marked.
+  for (const m of spans.plain ?? []) {
+    for (const [a, b] of findRanges(text, m)) for (let i = a; i < b; i++) attrs[i] = { u: false, hl: null, box: false, fs: 11 };
+  }
   // CardMirror's pilcrow joiner is always 6pt with no inherited marks.
   for (let i = 0; i < text.length; i++) {
     if (text[i] === PILCROW) attrs[i] = { u: false, hl: null, box: false, fs: 6 };

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { AIProvider, HighlightColor } from '../types';
 import type { HighlightLevel } from '../utils/cardFormat';
 import { HIGHLIGHT_SWATCH } from '../utils/cardFormat';
+import { WARNING_DELIMITERS } from '../utils/condense';
 import type { Settings as SettingsType } from '../platform/settings';
 import { readSettings, writeSettings, clearAll } from '../platform/settings';
 import { BUNDLED_CITE_RULES, currentCiteRules } from '../platform/ai';
@@ -129,11 +130,24 @@ export default function Settings({ onClose }: { onClose: () => void }) {
             <p style={{ fontSize: 13, margin: 0 }}>The rules the AI follows when writing a card's cite. Starts with our standard rules — change them to match how your team cuts cites.</p>
             <CiteRulesEditor />
           </div>
-          <Row label="Condense: preserve paragraph integrity" hint="On: paragraphs stay separate (whitespace is still cleaned up). Off: they merge into one paragraph.">
+          <Row label="Condense: preserve paragraph integrity (default)" hint="On: paragraphs stay separate (whitespace is still cleaned up). Off: they merge into one paragraph.">
             <Toggle checked={s.paragraphIntegrity} onChange={(v) => update({ paragraphIntegrity: v })} />
           </Row>
           <Row label="Condense: use pilcrow markers" hint="Only matters when paragraph integrity is off: joins merged paragraphs with a small ¶ instead of a space.">
             <Toggle checked={s.usePilcrows} disabled={s.paragraphIntegrity} onChange={(v) => update({ usePilcrows: v })} />
+          </Row>
+          <Row label="Condense with warning: marker delimiter" hint="Brackets around the PARAGRAPH INTEGRITY PAUSES / RESUMES lines. Custom uses your own text.">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+              <select className="input" style={{ width: 'auto', alignSelf: 'flex-start' }} value={s.condenseWarningDelimiter} onChange={(e) => update({ condenseWarningDelimiter: e.target.value as SettingsType['condenseWarningDelimiter'] })}>
+                {WARNING_DELIMITERS.map((d) => <option key={d} value={d}>{d === 'custom' ? 'Custom…' : d}</option>)}
+              </select>
+              {s.condenseWarningDelimiter === 'custom' && (
+                <>
+                  <input className="input" placeholder="Pause text, e.g. [PARAGRAPH INTEGRITY PAUSES]" value={s.condenseCustomPause} onChange={(e) => update({ condenseCustomPause: e.target.value })} />
+                  <input className="input" placeholder="Resume text, e.g. [PARAGRAPH INTEGRITY RESUMES]" value={s.condenseCustomResume} onChange={(e) => update({ condenseCustomResume: e.target.value })} />
+                </>
+              )}
+            </div>
           </Row>
           <Row label="Default highlight color" hint="Seeds the color picker for a new cut; you can still change it per card.">
             <div style={{ display: 'flex', gap: 8 }}>

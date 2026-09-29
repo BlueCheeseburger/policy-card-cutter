@@ -11,6 +11,7 @@
 
 import type { AIProvider, HighlightColor } from '../types';
 import type { HighlightLevel } from '../utils/cardFormat';
+import type { WarningDelimiter } from '../utils/condense';
 
 const KEY = 'pcc:settings';
 
@@ -32,6 +33,9 @@ export interface Settings {
   // Condense — same two settings and defaults as CardMirror's (see utils/condense.ts).
   paragraphIntegrity: boolean;
   usePilcrows: boolean;
+  condenseWarningDelimiter: WarningDelimiter;
+  condenseCustomPause: string;
+  condenseCustomResume: string;
   // The user's own cite-cutting rules, replacing the bundled
   // skills/cite_rules.md when set. The only part of the prompts a user can edit.
   citeRules?: string;
@@ -48,6 +52,9 @@ const DEFAULT_SETTINGS: Settings = {
   defaultHighlightLevel: 2,
   paragraphIntegrity: true,
   usePilcrows: true,
+  condenseWarningDelimiter: '[',
+  condenseCustomPause: '',
+  condenseCustomResume: '',
 };
 
 export function readSettings(): Settings {

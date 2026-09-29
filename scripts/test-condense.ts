@@ -4,7 +4,7 @@
 //
 // Run:  npx tsx scripts/test-condense.ts
 
-import { condenseParagraphs, cleanParagraph, PILCROW } from '../src/utils/condense';
+import { condenseParagraphs, cleanParagraph, defaultMode, warningMarkers, PILCROW } from '../src/utils/condense';
 
 let pass = 0, fail = 0;
 function check(name: string, cond: boolean, extra = '') {
@@ -12,9 +12,7 @@ function check(name: string, cond: boolean, extra = '') {
   else { fail++; console.log(`  ✗ ${name}${extra ? '  →  ' + extra : ''}`); }
 }
 const ch = String.fromCharCode;
-const integrity = { paragraphIntegrity: true, usePilcrows: true };
-const merge = { paragraphIntegrity: false, usePilcrows: false };
-const pilcrow = { paragraphIntegrity: false, usePilcrows: true };
+const text = (paras: string[], mode: Parameters<typeof condenseParagraphs>[1]) => condenseParagraphs(paras, mode).text;
 
 console.log('\n[1] whitespace cleanup');
 {
@@ -27,20 +25,36 @@ console.log('\n[1] whitespace cleanup');
 
 console.log('\n[2] Branch C — integrity on: paragraphs stay separate, empties dropped');
 {
-  const out = condenseParagraphs(['The\tfed  raises', '', 'rates.'], integrity);
+  const out = text(['The\tfed  raises', '', 'rates.'], 'integrity');
   check('cleaned, empty removed, still two paragraphs', out === 'The fed raises\n\nrates.', JSON.stringify(out));
 }
 
-console.log('\n[3] Branch A — integrity off, no pilcrows: merged with one space');
+console.log('\n[3] Branch A — condensed: merged with one space');
+check('A. B.', text(['A.', 'B.'], 'merge') === 'A. B.');
+
+console.log('\n[4] Branch B — condensed with pilcrows: joined by the pilcrow');
 {
-  check('A. B.', condenseParagraphs(['A.', 'B.'], merge) === 'A. B.');
-  check('pilcrow setting ignored while integrity is on', condenseParagraphs(['A.', 'B.'], { paragraphIntegrity: true, usePilcrows: false }) === 'A.\n\nB.');
+  check('A.¶B.', text(['A.', 'B.'], 'pilcrow') === 'A.' + PILCROW + 'B.');
+  check('pilcrow is U+00B6', PILCROW === ch(0xb6));
 }
 
-console.log('\n[4] Branch B — integrity off, pilcrows: joined by the pilcrow');
+console.log('\n[5] settings toggles pick the default mode like CardMirror\'s F3');
 {
-  check('A.¶B.', condenseParagraphs(['A.', 'B.'], pilcrow) === 'A.' + PILCROW + 'B.');
-  check('pilcrow is U+00B6', PILCROW === ch(0xb6));
+  check('integrity on -> paragraphs kept (pilcrow setting ignored)', defaultMode(true, false) === 'integrity' && defaultMode(true, true) === 'integrity');
+  check('integrity off + pilcrows -> pilcrow', defaultMode(false, true) === 'pilcrow');
+  check('integrity off, no pilcrows -> merge', defaultMode(false, false) === 'merge');
+}
+
+console.log('\n[6] Condense With Warning wraps the merged body in pause/resume lines');
+{
+  const r = condenseParagraphs(['A.', 'B.'], 'warning', warningMarkers('['));
+  check('default brackets', r.text === '[PARAGRAPH INTEGRITY PAUSES]\n\nA. B.\n\n[PARAGRAPH INTEGRITY RESUMES]', JSON.stringify(r.text));
+  check('marker lines reported so they stay full size', r.markers.length === 2);
+  check('[[ delimiter closes with ]]', warningMarkers('[[').resume === '[[PARAGRAPH INTEGRITY RESUMES]]');
+  check('< delimiter closes with >', warningMarkers('<').pause === '<PARAGRAPH INTEGRITY PAUSES>');
+  check('{{ delimiter closes with }}', warningMarkers('{{').pause === '{{PARAGRAPH INTEGRITY PAUSES}}');
+  const c = condenseParagraphs(['A.'], 'warning', warningMarkers('custom', 'STOP', 'GO'));
+  check('custom uses its own pause and resume text', c.text === 'STOP\n\nA.\n\nGO', JSON.stringify(c.text));
 }
 
 console.log(`\n${pass} passed, ${fail} failed\n`);

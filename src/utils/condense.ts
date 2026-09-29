@@ -12,16 +12,16 @@
 //   by a 6-pt "¶" so the merge is reversible.
 //   OFF + pilcrows OFF: paragraphs merge into one, joined by a single space.
 //
-// CardMirror's heading-handling / paste / "condense with warning" options
-// govern tags, cites and pasted text inside a Word-style editor; a card body
-// here is only ever body paragraphs, so they don't apply.
+//   "Condense With Warning": merged like Branch A, then wrapped in a
+//   "[PARAGRAPH INTEGRITY PAUSES]" line before and a "[PARAGRAPH INTEGRITY
+//   RESUMES]" line after, using the chosen marker delimiter.
+//   "Uncondense" is just switching back to paragraphs-kept.
+//
+// CardMirror's heading-handling and paste options govern tags, cites and
+// pasted text inside a Word-style editor; a card body here is only ever body
+// paragraphs, so those two don't apply.
 
 export const PILCROW = '¶'; // U+00B6
-
-export interface CondenseOptions {
-  paragraphIntegrity: boolean;
-  usePilcrows: boolean;
-}
 
 export function cleanParagraph(text: string): string {
   return text
@@ -31,8 +31,45 @@ export function cleanParagraph(text: string): string {
     .trim();
 }
 
-export function condenseParagraphs(paragraphs: string[], opts: CondenseOptions): string {
+// The four ways a card body can be laid out — CardMirror's Condense (integrity
+// on), Condense Without Paragraph Integrity, ... (With Pilcrows), and
+// Condense With Warning. Switching back to 'integrity' is its Uncondense.
+export type CondenseMode = 'integrity' | 'merge' | 'pilcrow' | 'warning';
+
+export const CONDENSE_MODE_LABELS: Record<CondenseMode, string> = {
+  integrity: 'Paragraphs kept',
+  merge: 'Condensed',
+  pilcrow: 'Condensed with ¶',
+  warning: 'Condensed with warning',
+};
+
+// CardMirror's "marker delimiter" setting.
+export type WarningDelimiter = '[' | '[[' | '<' | '<<' | '{' | '{{' | 'custom';
+export const WARNING_DELIMITERS: WarningDelimiter[] = ['[', '[[', '<', '<<', '{', '{{', 'custom'];
+
+export interface WarningMarkers { pause: string; resume: string }
+
+const CLOSERS: Record<string, string> = { '[': ']', '[[': ']]', '<': '>', '<<': '>>', '{': '}', '{{': '}}' };
+
+export function warningMarkers(delimiter: WarningDelimiter, customPause = '', customResume = ''): WarningMarkers {
+  if (delimiter === 'custom') return { pause: customPause, resume: customResume };
+  const close = CLOSERS[delimiter];
+  return { pause: `${delimiter}PARAGRAPH INTEGRITY PAUSES${close}`, resume: `${delimiter}PARAGRAPH INTEGRITY RESUMES${close}` };
+}
+
+// The mode the settings toggles pick by default (CardMirror's F3 branches).
+export function defaultMode(paragraphIntegrity: boolean, usePilcrows: boolean): CondenseMode {
+  return paragraphIntegrity ? 'integrity' : usePilcrows ? 'pilcrow' : 'merge';
+}
+
+// Returns the body text plus any marker lines that must stay full size and
+// unmarked (the warning lines are notes to the reader, not cut text).
+export function condenseParagraphs(paragraphs: string[], mode: CondenseMode, markers?: WarningMarkers): { text: string; markers: string[] } {
   const cleaned = paragraphs.map(cleanParagraph).filter(Boolean);
-  if (opts.paragraphIntegrity) return cleaned.join('\n\n');
-  return cleaned.join(opts.usePilcrows ? PILCROW : ' ');
+  if (mode === 'integrity') return { text: cleaned.join('\n\n'), markers: [] };
+  if (mode === 'merge') return { text: cleaned.join(' '), markers: [] };
+  if (mode === 'pilcrow') return { text: cleaned.join(PILCROW), markers: [] };
+  const m = markers ?? warningMarkers('[');
+  const lines = [m.pause, cleaned.join(' '), m.resume].filter((l) => l.trim());
+  return { text: lines.join('\n\n'), markers: [m.pause, m.resume].filter((l) => l.trim()) };
 }

@@ -26,6 +26,10 @@ in [Warroom](https://github.com/BlueCheeseburger/warroom).
   (default on) and "use pilcrow markers" (default on, only used when
   integrity is off). Whitespace cleanup always runs; merged paragraphs are
   joined by a 6pt ¶ or a single space.
+- On the finished card, a "Paragraphs" menu switches between CardMirror's
+  layouts — Paragraphs kept (its Uncondense), Condensed, Condensed with ¶, and
+  Condensed with warning (PARAGRAPH INTEGRITY PAUSES/RESUMES lines, with its
+  marker-delimiter setting: [ [[ < << { {{ or custom). No new AI call.
 - Proper .mhtml support (decodes Chrome's single-file saved pages).
 
 ### Removed

@@ -8,7 +8,8 @@ import { openFile } from '../platform/files';
 import { readSettings } from '../platform/settings';
 import { buildAttrsFromSpans, runsFromAttrs, plainTag, HIGHLIGHT_SWATCH } from '../utils/cardFormat';
 import type { CharAttr, HighlightLevel } from '../utils/cardFormat';
-import { condenseParagraphs } from '../utils/condense';
+import { condenseParagraphs, defaultMode, warningMarkers, CONDENSE_MODE_LABELS } from '../utils/condense';
+import type { CondenseMode } from '../utils/condense';
 import { exportCardToDocx, downloadBlob } from '../utils/docxExport';
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -36,6 +37,8 @@ export default function CardCutter() {
   const [editText, setEditText] = useState('');
   const [editAttrs, setEditAttrs] = useState<CharAttr[]>([]);
   const [cutResult, setCutResult] = useState<CutResult | null>(null);
+  const [mode, setMode] = useState<CondenseMode>('integrity');
+  const [markers, setMarkers] = useState<string[]>([]);
   const [highlightLevel, setHighlightLevel] = useState<HighlightLevel>(() => readSettings().defaultHighlightLevel ?? 2);
   const [taglines, setTaglines] = useState<string[]>([]);
   const [chosenTag, setChosenTag] = useState('');
@@ -89,7 +92,7 @@ export default function CardCutter() {
         return;
       }
       const result = { underline: res.underline, highlight: res.highlight, box: res.box };
-      setEditAttrs(buildAttrsFromSpans(editText, result, color, highlightLevel));
+      setEditAttrs(buildAttrsFromSpans(editText, { ...result, plain: markers }, color, highlightLevel));
       setCutResult(result);
       if (res.taglines?.length) {
         setTaglines(res.taglines);
@@ -155,29 +158,46 @@ export default function CardCutter() {
   }
 
   // Selecting nothing means "use the whole article" rather than blocking the cut.
-  const selectedBody = useMemo(() => {
-    if (!source) return '';
+  const bodyParas = useMemo(() => {
+    if (!source) return [];
     const idxs = includedParas.size
       ? [...includedParas].sort((a, b) => a - b)
       : source.paragraphs.map((_, i) => i);
-    const s = readSettings();
-    return condenseParagraphs(idxs.map((i) => source.paragraphs[i]), { paragraphIntegrity: s.paragraphIntegrity, usePilcrows: s.usePilcrows });
+    return idxs.map((i) => source.paragraphs[i]);
   }, [includedParas, source]);
 
+  function renderBody(m: CondenseMode) {
+    const s = readSettings();
+    return condenseParagraphs(bodyParas, m, warningMarkers(s.condenseWarningDelimiter, s.condenseCustomPause, s.condenseCustomResume));
+  }
+
+  // "Condense" / "Condense Without Paragraph Integrity" / "...With Pilcrows" /
+  // "Condense With Warning" / "Uncondense" on the finished card: re-lay the
+  // body out and re-apply the same cut, no new AI call.
+  function changeMode(m: CondenseMode) {
+    if (!cutResult) return;
+    const { text, markers: mk } = renderBody(m);
+    setMode(m); setMarkers(mk); setEditText(text);
+    setEditAttrs(buildAttrsFromSpans(text, { ...cutResult, plain: mk }, color, highlightLevel));
+  }
+
   async function cut() {
-    if (!selectedBody.trim()) return;
-    await runEmphasize(selectedBody, intent, []);
+    if (!bodyParas.join('').trim()) return;
+    const s = readSettings();
+    const m = defaultMode(s.paragraphIntegrity, s.usePilcrows);
+    setMode(m); setMarkers([]);
+    await runEmphasize(renderBody(m).text, intent, []);
   }
 
   function applyHighlightLevel(level: HighlightLevel) {
     if (!cutResult) return;
     setHighlightLevel(level);
-    setEditAttrs(buildAttrsFromSpans(editText, cutResult, color, level));
+    setEditAttrs(buildAttrsFromSpans(editText, { ...cutResult, plain: markers }, color, level));
   }
 
   function changeColor(c: HighlightColor) {
     setColor(c);
-    if (cutResult) setEditAttrs(buildAttrsFromSpans(editText, cutResult, c, highlightLevel));
+    if (cutResult) setEditAttrs(buildAttrsFromSpans(editText, { ...cutResult, plain: markers }, c, highlightLevel));
   }
 
   // The finished card, rebuilt live from the current cut/color/density.
@@ -342,6 +362,15 @@ export default function CardCutter() {
                   <button key={c} onClick={() => changeColor(c)}
                     style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${color === c ? 'var(--ink)' : 'transparent'}`, backgroundColor: HIGHLIGHT_SWATCH[c], cursor: 'pointer' }} title={`Highlight in ${c}`} />
                 ))}
+                <span style={{ margin: '0 2px', color: 'var(--ink-faint)' }}>|</span>
+                <span style={{ fontSize: 12, color: 'var(--ink-muted)' }}>Paragraphs:</span>
+                <select
+                  className="input" style={{ width: 'auto', fontSize: 12, padding: '4px 8px' }}
+                  value={mode} onChange={(e) => changeMode(e.target.value as CondenseMode)}
+                  title="Condense without paragraph integrity, with pilcrows, or with a warning — or uncondense back to paragraphs"
+                >
+                  {(Object.keys(CONDENSE_MODE_LABELS) as CondenseMode[]).map((m) => <option key={m} value={m}>{CONDENSE_MODE_LABELS[m]}</option>)}
+                </select>
                 {taglines.length > 1 && (
                   <button className="btn" style={{ marginLeft: 'auto', fontSize: 12 }}
                     onClick={() => setChosenTag(taglines[(taglines.indexOf(chosenTag) + 1) % taglines.length])}
@@ -373,7 +402,7 @@ export default function CardCutter() {
         <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: 8 }}>
           {step === 'select' && (
             <>
-              <button className="ai-glow-ring btn-primary" disabled={!selectedBody.trim()} onClick={cut}
+              <button className="ai-glow-ring btn-primary" disabled={!bodyParas.join('').trim()} onClick={cut}
                 title={includedParas.size ? `Cut from the ${includedParas.size} selected paragraph${includedParas.size === 1 ? '' : 's'}` : 'Cut from the whole article'}>
                 Cut card →
               </button>
